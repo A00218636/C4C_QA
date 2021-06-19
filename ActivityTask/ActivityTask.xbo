@@ -1,0 +1,28 @@
+﻿import AP.Common.GDT as apCommonGDT;
+import AP.FO.ProductDataMaintenance.Global;
+import AP.PC.ActivityManagement.Global;
+
+
+[Extension] businessobject AP.PC.ActivityManagement.Global:Activity raises POPAError {
+ 
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+		message POPAError text "Error &1.": LANGUAGEINDEPENDENT_EXTENDED_Text;
+
+		element ZExtnField:LongText;
+    node Item[0,n]{
+	 
+	 element ZProductID:ProductInternalID;
+	 element ZProdDesc: apCommonGDT:LANGUAGEINDEPENDENT_EXTENDED_Text;
+	 element ZProductCategory:ProductCategoryInternalID;
+	 association ToMaterial [1,1] to Material;	
+	 
+	}
+   		node Party {
+   	    } 
+    
+   		node WorklistItem {
+   	    } 
+     
+ //action addItems;
+}

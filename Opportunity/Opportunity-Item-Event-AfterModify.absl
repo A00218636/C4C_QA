@@ -1,0 +1,29 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Opportunity
+		Node: Item
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+
+var t = 10;
+
+if(this.ToParent.ProcessingTypeCode == "OPPT")
+{
+	if(!this.SalesPrice.content.IsInitial() && !this.Quantity.content.IsInitial())
+	{
+		this.TotalProductRevenue.content = this.SalesPrice.content * this.Quantity.content;
+		this.TotalProductRevenue.currencyCode = this.ToParent.SalesForecast.ExpectedRevenueAmount.currencyCode;
+		this.ExpectedNetAmount.content = this.SalesPrice.content * this.Quantity.content;
+		this.SalesPrice.currencyCode = this.ToParent.SalesForecast.ExpectedRevenueAmount.currencyCode;
+	}
+}

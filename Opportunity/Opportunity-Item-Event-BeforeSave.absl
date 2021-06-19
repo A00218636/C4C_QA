@@ -1,0 +1,129 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Opportunity
+		Node: Item
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.FO.PriceAndTax.Global;
+import AP.Common.GDT;
+import AP.PDI.bo;
+import AP.FO.ProductDataMaintenance.Global;
+
+
+//var prod = Material.Retrieve(this.ItemProduct.ProductUUID);
+//
+//this.ZAEPrice = prod.Common.ZAELow;
+//
+//
+
+//var priceList : BusinessObject::SalesPriceList;
+//var price : BusinessObject::SalesPriceList.PriceSpecification;
+//var propertyValuation : BusinessObject::SalesPriceList.PriceSpecification.PropertyValuation;
+////var productPrices : elementsof BasePriceList.ProductPrices;
+//
+//// Initialization query to define Workcenter subview, e.g. PriceList
+//var initQuery = SalesPriceList.QueryByGroupCode;
+//var initSelParams = initQuery.CreateSelectionParams();
+//initSelParams.Add(initQuery.GroupCode.content, "I", "EQ", "PLPRICE1");
+//var initQueryResult = initQuery.Execute(initSelParams);
+//
+//// Query base price list
+//var query = SalesPriceList.QueryByTypeCodeAndPropertyIDAndPropertyValue;
+//var selParams = query.CreateSelectionParams();
+//// List type 7PL0 = Price inside a list
+//selParams.Add(query.TypeCode.content, "I", "EQ", "7PL0");
+//// Released price list
+////selParams.Add(query.ReleaseStatusCode, "I", "EQ", "3");
+//// Valid today
+////selParams.Add(query.ValidityPeriod.StartTimePoint.Date, "I", "EQ", Context.GetCurrentUserDate());
+////selParams.Add(query.ValidityPeriod.EndTimePoint.Date, "I", "EQ", Context.GetCurrentUserDate());
+//// Base price list has no header fields (= PropertyValuation), but four item fields (= PriceSpecificationPropertyValuation1-4)
+//selParams.Add(query.PriceSpecificationPropertyValuationPriceSpecificationElementPropertyValuation1.PriceSpecificationElementPropertyReference.PriceSpecificationElementPropertyID.content, "I", "EQ", "CND_PRODUCT_ID");
+//selParams.Add(query.PriceSpecificationPropertyValuationPriceSpecificationElementPropertyValuation2.PriceSpecificationElementPropertyReference.PriceSpecificationElementPropertyID.content, "I", "EQ", "CND_PRODUCT_ID_TYPE_CODE");
+//selParams.Add(query.PriceSpecificationPropertyValuationPriceSpecificationElementPropertyValuation3.PriceSpecificationElementPropertyReference.PriceSpecificationElementPropertyID.content, "I", "EQ", "CND_PRODUCT_TYPE_CODE");
+//selParams.Add(query.PriceSpecificationPropertyValuationPriceSpecificationElementPropertyValuation4.PriceSpecificationElementPropertyReference.PriceSpecificationElementPropertyID.content, "I", "EQ", "PRC_PRICE_LIST");
+//// The query should return only one price list (due to defined query parameters)!
+//var queryResult = query.Execute(selParams);
+//
+//var t = queryResult.GetFirst().ID.content;
+//
+//
+//
+//foreach (priceList in queryResult)
+//{
+	//var amount = priceList.PriceSpecification.GetFirst().Amount;
+	//var baseQ = priceList.PriceSpecification.GetFirst().BaseQuantity;
+	//var baseQTc = priceList.PriceSpecification.GetFirst().BaseQuantityTypeCode;
+//
+	//if (priceList.ID.content == "AE LOW")
+	//{
+		//var id = priceList.ID;
+		//foreach (price in priceList.PriceSpecification)
+		//{
+			//foreach (propertyValuation in price.PropertyValuation)
+			//{
+				//if (propertyValuation.PriceSpecificationElementPropertyValuation.PriceSpecificationElementPropertyReference.PriceSpecificationElementPropertyID.content == "CND_PRODUCT_ID")
+				//{
+//
+					////productPrices.Product.content = propertyValuation.PriceSpecificationElementPropertyValuation.PriceSpecificationElementPropertyValue.ID.content;
+					////CHECK IF PriceSpecificationElementPropertyValue.ID is equal to the current Product
+					//var itemID = this.ItemProduct.ProductKey.ProductID.content;
+					//if (propertyValuation.PriceSpecificationElementPropertyValuation.PriceSpecificationElementPropertyValue.ID.content == itemID)
+					//{
+						////	ASSIGN VALUE TO THE CUSTOM PRICING FIELDS
+						//this.ZAEPrice = price.Amount;
+				//
+					//}
+				//
+					////IF YES, RETRIEVE THE PRICES FROM THE PRICE LIST
+//
+					////break;
+				//}
+			//}
+		//}
+//
+		//if (priceList.ID.content == "MARKET HIGH")
+		//{
+			////var id = priceList.ID;
+			//foreach (price in priceList.PriceSpecification)
+			//{
+				//foreach (propertyValuation in price.PropertyValuation)
+				//{
+					//if (propertyValuation.PriceSpecificationElementPropertyValuation.PriceSpecificationElementPropertyReference.PriceSpecificationElementPropertyID.content == "CND_PRODUCT_ID")
+					//{
+//
+						////productPrices.Product.content = propertyValuation.PriceSpecificationElementPropertyValuation.PriceSpecificationElementPropertyValue.ID.content;
+						////CHECK IF PriceSpecificationElementPropertyValue.ID is equal to the current Product
+						//var itemID = this.ItemProduct.ProductKey.ProductID.content;
+						//if (propertyValuation.PriceSpecificationElementPropertyValuation.PriceSpecificationElementPropertyValue.ID.content == itemID)
+						//{
+							////	ASSIGN VALUE TO THE CUSTOM PRICING FIELDS
+							//this.ZHMPrice = price.Amount;
+				//
+						//}
+				//
+						////IF YES, RETRIEVE THE PRICES FROM THE PRICE LIST
+//
+						////break;
+					//}
+				//}
+			//}
+//
+			////productPrices.Price.Amount = price.Amount;
+			////productPrices.Price.BaseQuantity = price.BaseQuantity;
+			////productPrices.Price.BaseQuantityTypeCode = price.BaseQuantityTypeCode;
+			////this.ProductPrices.Create(productPrices);
+		//}
+	//}
+//}

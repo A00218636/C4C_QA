@@ -1,0 +1,46 @@
+﻿import AP.Common.GDT as apCommonGDT;
+import AP.FO.ProductDataMaintenance.Global;
+
+businessobject TaskItem raises Error {
+
+        // Root node must not be specified, it is created implicitly
+        //
+        // Add elements here. 
+        // 
+        // To declare an element as alternative key, use the [AlternativeKey] annotation.
+        // Please note:
+        // - An alternative key of type UUID exists implicitly for each node, enabling the node
+        //   to be used as an association target.
+        // - The QueryByElements query is created automatically for each node.
+        // - Code completion is available with CTRL + SPACE.
+
+		message Error text "&1" :LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element TaskID:BusinessTransactionDocumentID;
+		//element BtdID:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element ProductID:ProductInternalID;
+		//element Category:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element Quantity:Quantity;
+		[Label("Requested Price")]element RequestedPrice:Amount = {currencyCode = "USD"};
+		element Notes:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Competitor Price")]element CompetitorPrice:Amount = {currencyCode = "USD"};
+		[Label("Approved Price")]element ApprovedPrice:Amount = {currencyCode = "USD"};
+		[Label("Price Valid Through")]element PriceValThrough:Date;
+		[Label("Competitor Manufacturer")]element CompManftr:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Competitor Product")]element CompProd:LANGUAGEINDEPENDENT_EXTENDED_Text;
+
+		[Transient]element IsReadOnly:Indicator;
+
+		//action addProduct;
+		node Item[0,n]{
+		 element RootTaskID:BusinessTransactionDocumentID;
+		 element ProductID:ProductInternalID;
+		 association ToMaterial [1,1] to Material;
+
+		}
+		//node Products[0,n]{
+		//element RootTaskID:BusinessTransactionDocumentID;
+		 //element ProductID:ProductInternalID;
+		//}
+		association ToActivity [1,1] to AP.PC.ActivityManagement.Global:Activity;
+		association ToMaterial [1,1] to Material;
+}

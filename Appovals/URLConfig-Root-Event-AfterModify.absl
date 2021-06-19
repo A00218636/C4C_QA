@@ -1,0 +1,41 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: URLConfig
+		Node: Root
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+import AP.Common.GDT;
+import AP.FO.BusinessPartner.Global;
+
+var account = Customer.Retrieve(this.Account.RemoveLeadingZeros());
+var ZlinkAccount;
+if (account.IsSet())
+{
+	var busType = account.Common.GetFirst().ZBusinessType;
+	if (busType == "111")
+	{
+		this.CommercialIndicator = true;
+    
+	}
+	else
+	{  
+		this.CommercialIndicator = false; 
+	}
+  
+	var custCommon = account.Common;
+	if (custCommon.GetFirst().IsSet())
+	{
+	//	this.accountRefrence = custCommon.GetFirst().ZCustID.RemoveLeadingZeros();   // Account External Refrence
+		this.accountRefrence = custCommon.GetFirst().ZGAN;	// Global Account Number
+	}
+}

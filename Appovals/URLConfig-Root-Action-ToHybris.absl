@@ -1,0 +1,70 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: URLConfig
+		Node: Root
+		Action: ToHybris 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import ABSL;
+import AP.CRM.Global;
+import AP.Common.Global;
+import AP.PDI.bo;
+import AP.FO.BusinessPartner.Global;
+
+var querry = LOOKUPBCO.QueryByElements;
+var querryn = URL.QueryByElements;
+var SelectionParam = querryn.CreateSelectionParams();
+var SO1;
+var SO2;
+var accountRef;
+var externalRef;
+
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "SO1");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "SO2");
+var result = querryn.Execute(SelectionParam);
+foreach (var tempurl in result)
+{
+	if (tempurl.CODE.content == "SO1")
+	{
+		SO1 = tempurl.URL;
+	}
+	if (tempurl.CODE.content == "SO2")
+	{
+		SO2 = tempurl.URL;
+	}
+}
+if (!this.accountRefrence.IsInitial())
+{
+	// accountRef = this.accountRefrence + "/";	
+	accountRef = this.accountRefrence.RemoveLeadingZeros();
+	if(accountRef.Length() < 10)
+	{	
+		var noOfZeros = 10 - accountRef.Length();
+		while(noOfZeros > 0)
+		{
+			accountRef = "0" + accountRef;
+			noOfZeros = noOfZeros - 1;
+		}
+		
+	}
+	SO1 = SO1 + accountRef  + "/";	
+}
+if (!this.SalesOrder.IsInitial())
+{
+	var query = CustomerQuote.QueryByElements;
+	var selectionParam = query.CreateSelectionParams();
+	selectionParam.Add(query.ID.content, "I", "EQ", this.SalesOrder.RemoveLeadingZeros());
+	var resultdata = query.Execute(selectionParam);
+	if (resultdata.Count() > 0)
+	{
+		externalRef = resultdata.GetFirst().BuyerID.content.RemoveLeadingZeros();
+		SO1 = SO1 + externalRef;
+	}
+}
+this.HybrisOrderURL = SO1 + SO2;

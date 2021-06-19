@@ -1,0 +1,106 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: TaskItem
+		Node: Root
+		Validation: OnSave 
+
+		Script file signature
+		----------------------------
+		Returns: Boolean
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script before an instance of the business object is saved to the data base.
+		It can have a return value of either true or false, which determines whether the instance of the business object is saved or not.
+		All fields in this business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+var errCount = 0;
+var prod = this.ToMaterial;
+//Check if this task is POPA - Z002 relevant or not
+var task = this.ToActivity;
+if (task.ProcessingTypeCode == "Z002")
+{
+	
+	if (this.RequestedPrice.content <= 0.00 || this.RequestedPrice.content.ToString() == "")
+	{
+	
+		raise Error.Create("E", "Requested Price is mandatory for the Products in POPA task.");			
+		errCount = errCount + 1;
+	}
+
+	if (this.Quantity.IsInitial())
+	{
+	
+		raise Error.Create("E", "Quantity is mandatory for the Products in a POPA task.");			
+		errCount = errCount + 1;
+	}
+
+	if (this.Quantity.unitCode.IsInitial())
+	{
+	
+		raise Error.Create("E", "UoM for Quantity is mandatory for the Products in a POPA task.");			
+		errCount = errCount + 1;
+	}
+
+	
+
+	if (!this.ToMaterial.IsSet() && !this.TaskID.IsInitial())
+	{
+	
+		raise Error.Create("E", "Product or Product Category is missing.");			
+		errCount = errCount + 1;
+	}
+
+	//if (this.ToMaterial.IsSet())
+	//{
+		//if (this.ToMaterial.CrossProcessCategory.IsSet())
+		//{
+			//if (!this.ToMaterial.CrossProcessCategory.ProductCategory.IsSet())
+			//{
+				//raise Error.Create("E", "Product Category is missing.");			
+				//errCount = errCount + 1;
+			//}
+		//}
+	//}
+
+	if (this.Notes == "")
+	{
+	
+		raise Error.Create("E", "Notes are mandatory for a POPA task.");			
+		errCount = errCount + 1;
+	}
+	if (this.CompetitorPrice.content <= 0.00 || this.CompetitorPrice.content.ToString() == "")
+	{
+	
+		raise Error.Create("E", "Competitor Price is mandatory for a POPA task.");			
+		errCount = errCount + 1;
+	}
+	if (this.CompManftr == "")
+	{
+	
+		raise Error.Create("E", "Competitor Manufacturer is mandatory for a POPA task.");			
+		errCount = errCount + 1;
+	}
+	if (this.CompProd == "")
+	{
+	
+		raise Error.Create("E", "Competitor Product is mandatory for a POPA task.");			
+		errCount = errCount + 1;
+	}
+
+}
+
+
+if (errCount > 0)
+{
+	return false;
+}
+else
+{
+	return true;
+}
+

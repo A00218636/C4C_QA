@@ -1,0 +1,70 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: TaskItem
+		Node: Root
+		Event: AfterLoading 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being loaded.
+		- all the fields of business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+import AP.FO.BusinessPartner.Global;
+import AP.PC.ActivityManagement.Global;
+
+//Get user details
+var identityUUID = Context.GetCurrentIdentityUUID();
+var identity = Identity.Retrieve(identityUUID);
+
+var bpUUID = "";
+	
+if (identity.IsSet())
+{
+	bpUUID = identity.BusinessPartnerUUID.content.ToString();
+	//var emp = Employee.Retrieve(bpUUID);
+
+}
+this.IsReadOnly = true;
+//Retrieve Task info
+var query = Activity.QueryByElements;
+//var resultData = query.ExecuteDataOnly();
+// 2. Selection
+var selectionParams = query.CreateSelectionParams();
+selectionParams.Add(query.ID, "I", "EQ", this.TaskID.content.RemoveLeadingZeros());
+selectionParams.Add(query.TypeCode, "I", "EQ", "542");
+// Result
+var resultData = query.Execute(selectionParams);
+
+if (resultData.Count() > 0)
+{
+	var invParties = resultData.Party;
+	foreach (var i in resultData.Party)
+	{
+		//var bpuid = i.BusinessPartner.UUID.content;
+		if (i.IsSet())
+		{
+			bpUUID = identity.BusinessPartnerUUID.content.ToString();
+			if (i.BusinessPartner.IsSet())
+			{
+				if (i.BusinessPartner.UUID.content.ToString() == bpUUID && i.RoleCode == "Z012")
+				{
+					this.IsReadOnly = false;
+					break;	  
+				}
+				//else
+				//{
+					//this.IsReadOnly = true;		
+				//}
+			}
+		}
+	
+	}
+
+}

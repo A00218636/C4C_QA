@@ -1,0 +1,434 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Opportunity
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.FO.PriceAndTax.Global;
+import AP.Common.GDT;
+import AP.PDI.bo;
+import AP.FO.Activity.Global;
+import AP.PC.ActivityManagement.Global;
+import AP.PC.SalesTerritoryMgmt.Global;
+
+var x = 0;
+
+//ASSIGN VALUE TO STANDARD FIELD
+//if (!this.ZRole.IsInitial())
+//{
+//
+//var acctID = this.ProspectParty.PartyKey.PartyID.content.RemoveLeadingZeros();
+//
+//var acctDetails = Customer.Retrieve(acctID);
+//
+//if (acctDetails.IsSet())
+//{
+//
+//acctDetails.CustomerRole.RoleCode.content = this.ZRole.Trim();
+//
+//}
+//
+//}
+
+
+
+//CUSTOMER TYPE
+var account;
+if (this.ProspectParty.IsSet())
+{
+	var acctUUID = this.ProspectParty.PartyUUID;
+
+	account = Customer.Retrieve(acctUUID);
+
+	if (account.IsSet())
+	{
+		account.Common.GetFirst().ZBusinessType = "111";
+	}
+
+}
+
+if(this.ProcessingTypeCode == "OPPT")
+{
+	if(this.Item.Count() > 0)
+	{
+		this.SalesForecast.ExpectedRevenueAmount.content.Clear();
+		foreach(var product in this.Item)
+		{
+			this.SalesForecast.ExpectedRevenueAmount.content = this.SalesForecast.ExpectedRevenueAmount.content + (product.SalesPrice.content * product.Quantity.content);
+		}		
+	}	
+	this.TotalRevenue.content = this.SalesForecast.ExpectedRevenueAmount.content;
+	this.TotalRevenue.currencyCode = this.SalesForecast.ExpectedRevenueAmount.currencyCode;
+}
+
+if (this.BusinessTransactionDocumentReference.Count() > 0)
+{
+	var btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "64");
+
+	if (btd.Count() > 0)
+	{
+		//SEGMENT
+		var lead = btd.Lead.GetFirst();
+		if (account.Common.GetFirst().IsSet())
+		{
+			account.Common.GetFirst().ZSegment = lead.ZSegment;
+	 
+			//Source
+			switch (lead.OriginTypeCode.content)
+			{
+
+				case "001" { account.Common.GetFirst().ZLeadSource = "101"; }
+				case "002" { account.Common.GetFirst().ZLeadSource = "111"; }
+				case "003" { account.Common.GetFirst().ZLeadSource = "121"; }
+				case "004" { account.Common.GetFirst().ZLeadSource = "131"; }
+				case "Z01" { account.Common.GetFirst().ZLeadSource = "141"; }
+				case "Z02" { account.Common.GetFirst().ZLeadSource = "151"; }
+				case "Z03" { account.Common.GetFirst().ZLeadSource = "161"; }
+				case "Z04" { account.Common.GetFirst().ZLeadSource = "171"; }
+				case "Z05" { account.Common.GetFirst().ZLeadSource = "181"; }
+				case "Z06" { account.Common.GetFirst().ZLeadSource = "191"; }
+				case "Z08" { account.Common.GetFirst().ZLeadSource = "201"; }
+
+			}
+		}
+
+		//ASSIGN OPPT DESCRIPTION VALUE AS "<End User> + <Street Address>+ <City Name> +<State code>"
+
+		foreach (var party in this.ExternalParty)
+		{
+			if (party.RoleCode == "Z061")
+			{
+				var endUser = party.BusinessPartner.CurrentCommon.BusinessPartnerFormattedName;
+				if (party.BusinessPartner.CurrentDefaultAddressInformation.IsSet())
+				{
+					if (party.BusinessPartner.CurrentDefaultAddressInformation.Address.DefaultPostalAddressRepresentation.IsSet())
+					{ 
+		    
+						//var street = party.BusinessPartner.CurrentDefaultAddressInformation.Address.DefaultPostalAddressRepresentation.StreetName;
+				
+						//var city = party.BusinessPartner.CurrentDefaultAddressInformation.Address.DefaultPostalAddressRepresentation.CityName;
+						//var state = party.BusinessPartner.CurrentDefaultAddressInformation.Address.DefaultPostalAddressRepresentation.RegionCode;
+						//ASSIGN OPPT DESCRIPTION
+						var street = lead.ZPROJSTREET;
+						var city = lead.ZPROJCITY;
+						var stateCode = lead.ZPROJST;
+						this.Name.content = endUser + "-" + street + " " + city + " " + stateCode;
+					}
+				}
+
+
+			}
+		}
+
+	}
+}
+
+
+
+
+//ASSIGN ACCOUNT TEAM
+//var elOppParty : elementsof this.Party;
+//if (account.IsSet())
+//{
+//var acctTeam = account.CurrentEmployeeResponsible;
+//foreach (var emp in acctTeam)
+//{
+//
+//if (emp.IsSet())
+//{
+//
+//elOppParty.RoleCode = emp.PartyRoleCode;
+//
+//var empInfo = BusinessPartner.Retrieve(emp.EmployeeUUID);
+//
+//elOppParty.PartyKey.PartyID.content = empInfo.InternalID.RemoveLeadingZeros();
+//
+//this.Party.Create(elOppParty);
+//
+//}
+//
+//}
+//}
+
+//DELETE COPIED MEMBERS
+
+foreach (var member in this.Party)
+{  
+	if (member.ZIsCopiedMember == true)
+	{  
+		member.Delete();  
+	}
+
+}
+
+//COPY ACCOUNT TEAM to Opportunity sales team.
+var topLevelAccount;
+var parntAccount;
+if (account.IsSet())
+{
+	var topLevAccUUID = account.BupaUiTransformation.ParentAccount.TopLevelAccountUUID;
+	var prntAccUUID = account.BupaUiTransformation.ParentAccount.ParentAccountUUID;
+	topLevelAccount = Customer.Retrieve(topLevAccUUID);
+ 
+	//Retriving parent account details only when it is different from top level account.
+	if (!topLevAccUUID.content.IsInitial() && !prntAccUUID.content.IsInitial())
+	{
+		if (topLevAccUUID.content != prntAccUUID.content)
+		{
+			parntAccount = Customer.Retrieve(prntAccUUID);
+		}
+	}
+
+	if (topLevelAccount.IsSet())
+	{
+		//var tstr = topLevelAccount.Common.GetFirst().ZStrategic;
+		//var tbtype = topLevelAccount.Common.GetFirst().ZBusinessType;
+		if (topLevelAccount.Common.GetFirst().ZStrategic == true && topLevelAccount.Common.GetFirst().ZBusinessType == "111")
+		{
+			var acctTeam = account.CurrentEmployeeResponsible;
+			foreach (var emp in acctTeam)
+			{
+				if (emp.IsSet())
+				{
+					if (emp.PartyRoleCode == "Z056" || emp.PartyRoleCode == "Z014" || emp.PartyRoleCode == "Z018" || emp.PartyRoleCode == "Z019" || emp.PartyRoleCode == "Z000")// || emp.PartyRoleCode == "Z012"
+					{
+						var elOppParty = this.ExternalParty.Create();
+						elOppParty.RoleCode = emp.PartyRoleCode;		
+
+						var empInfo = BusinessPartner.Retrieve(emp.EmployeeUUID);
+						elOppParty.PartyKey.PartyID.content = empInfo.InternalID.RemoveLeadingZeros();
+						elOppParty.ZIsCopiedMember = true;
+					}
+
+				}
+			}
+
+			//Code to fetch territory assigned for an account.
+			var oppAccID = account.InternalIDNoAlphaConversion;
+			var query = SalesTerritory.QueryByElements;
+			var resultData;
+			var selectionParams = query.CreateSelectionParams();
+			selectionParams.Add(query.AccountCustomerID.content, "I", "EQ", oppAccID);
+			// Result
+			resultData = query.ExecuteDataOnly(selectionParams);
+
+			//Code to retrive territory team and assign to Sales team in Opportunity.
+			foreach (var ter in resultData)
+			{
+				var terID = ter.ID;
+				var terTeam = SalesTerritory.Retrieve(terID);
+
+				if (terTeam.IsSet())
+				{
+					foreach (var team in terTeam.Owner)
+					{
+
+						if (team.PartyRole == "Z056" || team.PartyRole == "Z014" || team.PartyRole == "Z018" || team.PartyRole == "Z019" || team.PartyRole == "Z000")// || team.PartyRole == "Z012"
+						{
+							var elOppSalesTeam = this.SalesTeamParty.Create();
+							elOppSalesTeam.RoleCode = team.PartyRole;		
+
+							var empInfo = BusinessPartner.Retrieve(team.EmployeeUUID);
+							elOppSalesTeam.PartyKey.PartyID.content = empInfo.InternalID.RemoveLeadingZeros();
+							elOppSalesTeam.ZIsCopiedMember = true;	
+						}
+
+					}
+				}
+			} 	
+
+
+			//Code to fetch territory assigned for an top level account.
+			var topLevelAccID = topLevelAccount.InternalIDNoAlphaConversion;
+			selectionParams.Clear();
+			selectionParams.Add(query.AccountCustomerID.content, "I", "EQ", topLevelAccID);
+			// Result
+			resultData = query.ExecuteDataOnly(selectionParams);
+
+			//Code to retrive territory team of top level account and assign to Sales team in Opportunity.
+			foreach (var topLvlTer in resultData)
+			{
+				var terID = topLvlTer.ID;
+				var terTeam = SalesTerritory.Retrieve(terID);
+
+				if (terTeam.IsSet())
+				{
+					foreach (var team in terTeam.Owner)
+					{
+
+						if (team.PartyRole == "Z056" || team.PartyRole == "Z014" || team.PartyRole == "Z018" || team.PartyRole == "Z019" || team.PartyRole == "Z000")// || team.PartyRole == "Z012"
+						{
+							var elOppSalesTeam = this.SalesTeamParty.Create();
+							elOppSalesTeam.RoleCode = team.PartyRole;		
+
+							var empInfo = BusinessPartner.Retrieve(team.EmployeeUUID);
+							elOppSalesTeam.PartyKey.PartyID.content = empInfo.InternalID.RemoveLeadingZeros();
+							elOppSalesTeam.ZIsCopiedMember = true;	
+						}
+
+					}
+				}
+			}
+
+			if (parntAccount.IsSet())
+			{
+				//Code to fetch territory assigned for an parent level account.
+				var prntLevelAccID = topLevelAccount.InternalIDNoAlphaConversion;
+				selectionParams.Clear();
+				selectionParams.Add(query.AccountCustomerID.content, "I", "EQ", prntLevelAccID);
+				// Result
+				resultData = query.ExecuteDataOnly(selectionParams);
+
+				//Code to retrive territory team of parent level account and assign to Sales team in Opportunity.
+				foreach (var prntTer in resultData)
+				{
+					var terID = prntTer.ID;
+					var terTeam = SalesTerritory.Retrieve(terID);
+
+					if (terTeam.IsSet())
+					{
+						foreach (var team in terTeam.Owner)
+						{
+
+							if (team.PartyRole == "Z056" || team.PartyRole == "Z014" || team.PartyRole == "Z018" || team.PartyRole == "Z019" || team.PartyRole == "Z000")// || team.PartyRole == "Z012"
+							{
+								var elOppSalesTeam = this.SalesTeamParty.Create();
+								elOppSalesTeam.RoleCode = team.PartyRole;		
+
+								var empInfo = BusinessPartner.Retrieve(team.EmployeeUUID);
+								elOppSalesTeam.PartyKey.PartyID.content = empInfo.InternalID.RemoveLeadingZeros();
+								elOppSalesTeam.ZIsCopiedMember = true;	
+							}
+
+						}
+
+					
+					}
+				}
+			}
+
+		}
+	}
+}
+
+//CREATE TASK ITEM
+
+//var task : elementsof TaskItem;
+//
+//task.TaskID.content = "199";
+//task.TaskID.content = task.TaskID.content.RemoveLeadingZeros();
+//
+//var taskItemRootNode = TaskItem.Create(task);
+////Query the record
+//var query = TaskItem.QueryByElements;
+//var selparam = query.CreateSelectionParams();
+//selparam.Add(query.TaskID.content, "I", "EQ", task.TaskID.content);
+//var result = query.Execute(selparam);
+//
+//if (result.Count() > 0)
+//{
+//
+//var oppItms = this.Item;
+//if (oppItms.Count() > 0)
+//{
+//foreach (var oppitm in oppItms)
+//{   
+//var taskItem = result.GetFirst().Item.Create();
+////var taskItm : elementsof TaskItem.Item;
+//
+//taskItem.RootTaskID.content = "199";
+//taskItem.ProductID = oppitm.ItemProduct.MaterialV1.InternalID;
+//
+//}
+//}
+////var taskItemNode : elementsof TaskItem.Item;
+////taskItemNode.ProductID.content = "10000010";
+////taskItemNode.RootTaskID.content = "199";
+//
+//}
+//
+//****************************************************************************
+if (this.IsSet())
+{
+	foreach (var Role in this.ExternalParty)
+	{
+		if (Role.IsSet() && !Role.RoleCode.IsInitial() && Role.RoleCode == "Z061")
+		{
+			var instance;
+			var name;
+			if (!Role.PartyKey.PartyID.IsInitial())
+			{
+				var lv_inst;
+
+				instance = Customer.Retrieve(Role.PartyKey.PartyID.content.RemoveLeadingZeros());
+				if (instance.IsSet() && instance.CurrentCommon.IsSet())
+				{
+					name = instance.CurrentCommon.BusinessPartnerFormattedName;
+				}
+			} 
+
+			this.ZPROJNAME = name + " " + this.ZPROJSTREET + " " + this.ZPROJLOC + " " + this.ZPROJCITY + " " + this.ZPROJST + " ";
+			var z = 0;
+		}
+	}
+}
+//******************************************************************************
+//******************************************************************************
+
+//if (this.BusinessTransactionDocumentReference.Count() > 0)
+//{
+//var lv_btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "64");
+//
+//if (lv_btd.Count() > 0)
+//{
+////SEGMENT
+//var lv_lead = lv_btd.Lead.GetFirst();
+//
+//
+////******************************************************************************
+//var count = 0;
+//var lv_Save;
+//if (!lv_lead.ZPerceivedBenefits_1.IsInitial())  { count = count + 1; }
+//if (!lv_lead.ZPerceived_Benefits_2.IsInitial()) { count = count + 1; } 
+//if (!lv_lead.ZPerceived_Benefits_3.IsInitial()){ count = count + 1; }
+//
+//if (!lv_lead.ZPerceived_Benefits_4.IsInitial()) { count = count + 1; }
+//if (count < 2)
+//{
+//raise ZPerceivedbenefits.Create("E");
+//return false;
+//}
+//var Count_PC = 0;
+//if (!lv_lead.ZPerceivedCose_1.IsInitial()) { Count_PC = Count_PC + 1; }
+//if (!lv_lead.ZPerceivedCose_2.IsInitial()) { Count_PC = Count_PC + 1; }
+//if (!lv_lead.ZPerceivedCose_3.IsInitial()) { Count_PC = Count_PC + 1; }
+//if (!lv_lead.ZPerceivedCose_4.IsInitial()) { Count_PC = Count_PC + 1; }
+//
+//if (Count_PC < 2)
+//{
+//raise ZPerceivedCost.Create("E");
+//return false;
+//}
+//}
+//}
+//******************************************************************************
+
+
+//************Update CloseDate into Custom CloseDate***************
+if(this.IsSet() && this.SalesForecast.IsSet() && !this.SalesForecast.ExpectedProcessingDatePeriod.EndDate.IsInitial())
+{
+	this.ZCalculatedCloseDate.Clear();
+	this.ZCalculatedCloseDate = this.SalesForecast.ExpectedProcessingDatePeriod.EndDate.ConvertToGlobalDateTime();
+}
+//************Update CloseDate into Custom CloseDate***************

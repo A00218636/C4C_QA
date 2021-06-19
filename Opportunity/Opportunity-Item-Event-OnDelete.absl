@@ -1,0 +1,18 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Opportunity
+		Node: Item
+		Event: OnDelete 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when the instance of the business object gets deleted and SAVE is triggered.
+		- The fields on the current node are always read-only.
+		- The fields from other nodes follow regular read/write behavior.
+*/
+
+import ABSL;
+
+this.ToParent.SalesForecast.ExpectedRevenueAmount.content = this.ToParent.SalesForecast.ExpectedRevenueAmount.content - this.TotalProductRevenue.content;

@@ -1,0 +1,65 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Opportunity
+		Node: Party
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+
+
+var acctID = this.ToRoot.ProspectParty.PartyKey.PartyID.content.RemoveLeadingZeros();
+
+var acctDetails = Customer.Retrieve(acctID);
+
+if (acctDetails.IsSet())
+{
+
+	if (acctDetails.Status.LifeCycleStatusCode == "2")
+	{
+		//this.ZRole.Clear();
+		if (acctDetails.CustomerRole.RoleCode.content == "CRM000")
+		{
+			this.ToRoot.ZRole = "CRM000";
+		}
+		else if (acctDetails.CustomerRole.RoleCode.content == "BUP002")
+		{
+			this.ToRoot.ZRole = "BUP002";
+		}
+		else if (acctDetails.CustomerRole.RoleCode.content == "ZCRM00")
+		{
+			this.ToRoot.ZRole = "ZCRM00";
+		}
+		
+	}
+
+	else
+	{
+		 
+		this.ToRoot.ZRole = "ZCRM00";
+		acctDetails.CustomerRole.RoleCode.content = this.ToRoot.ZRole.Trim();
+		
+	}
+
+}
+
+
+//foreach (var i in this.ToRoot.SalesTeamParty)
+//{
+	//var currParty = i.PartyKey.PartyID;
+	//if (this.PartyKey.PartyID.content == currParty.content && this != i)
+	//{      
+		//i.Delete();
+		////raise Duplicate.Create("E", "Party cannot be added twice.");
+	//}
+					//
+//}

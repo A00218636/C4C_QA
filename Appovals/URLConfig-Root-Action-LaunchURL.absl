@@ -1,0 +1,152 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: URLConfig
+		Node: Root
+		Action: LaunchURL 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import ABSL;
+import AP.CRM.Global;
+import AP.Common.Global;
+import AP.PDI.bo;
+import AP.FO.BusinessPartner.Global;
+
+var querry = LOOKUPBCO.QueryByElements;
+var querryn = URL.QueryByElements;
+var SelectionParam = querryn.CreateSelectionParams();
+var ZlinkAccount;
+var ZGAccount;
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "CPL");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "OPE");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "CPLACCOUNT");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "PRG");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "VACCOUNT");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "CREATEOR");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "VIEWORDER");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "VIEWORDER2");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "MNGNOTIF");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "CRCLAIMS");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "VCLAIMS");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMVACNT");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMCRORD");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMVORDER");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMVORD2");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMNGNOT");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMCRCLAM");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMVCLAM");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "COMMURL2");
+SelectionParam.Add(querryn.URLCode.content, "I", "EQ", "DELEGATE");
+
+var Zcust = Customer.Retrieve(this.Account.RemoveLeadingZeros());//.Common.GetFirst().ZCustID.RemoveLeadingZeros();
+if (Zcust.IsSet())
+{
+	var custCommon = Zcust.Common;
+	if (custCommon.GetFirst().IsSet())
+	{
+
+		ZlinkAccount = custCommon.GetFirst().ZCustID.RemoveLeadingZeros();
+	}
+		if (custCommon.GetFirst().IsSet())
+	{
+
+		ZGAccount = custCommon.GetFirst().ZGAN;
+	}
+}
+
+var result = querryn.Execute(SelectionParam);
+foreach (var tempurl in result)
+{
+	if (tempurl.CODE.content == "CPL")
+	{
+		this.CPLUrl = tempurl.URL;
+	}
+	if (tempurl.CODE.content == "OPE")
+	{
+		this.OPEUrl = tempurl.URL;
+	}
+	if (tempurl.CODE.content == "CPLACCOUNT")
+	{
+		this.cplAccount = tempurl.URL + ZlinkAccount;
+	}
+	if (tempurl.CODE.content == "PRG")
+	{
+		this.pricingGird = tempurl.URL + ZlinkAccount;
+	}
+	// MohawkExchangeURL
+	if (tempurl.CODE.content == "VACCOUNT")
+	{
+		this.VAccount = tempurl.URL + ZGAccount;
+	}
+	if (tempurl.CODE.content == "CREATEOR")
+	{
+		this.CreateOrder = tempurl.URL+ ZGAccount;
+	}
+	if (tempurl.CODE.content == "VIEWORDER")
+	{
+		this.ViewOrder = tempurl.URL + ZGAccount;
+	}
+	if (tempurl.CODE.content == "MNGNOTIF")
+	{
+		this.ManageNotification = tempurl.URL + ZGAccount;
+	}
+	if (tempurl.CODE.content == "CRCLAIMS")
+	{
+		this.CreateClaims = tempurl.URL+ ZGAccount;
+	}
+	if (tempurl.CODE.content == "VCLAIMS")
+	{
+		this.ViewClaims = tempurl.URL+ ZGAccount;
+	}
+	if (tempurl.CODE.content == "COMMVACNT")
+	{
+		this.CommVAccount = tempurl.URL + ZGAccount;
+	}
+	if (tempurl.CODE.content == "COMMCRORD")
+	{
+		this.CommCreateOrder = tempurl.URL + ZGAccount;
+	}
+	if (tempurl.CODE.content == "COMMVORDER")
+	{
+		this.CommViewOrder = tempurl.URL+ ZGAccount;
+	}
+	if (tempurl.CODE.content == "COMMNGNOT")
+	{
+		this.CommManageNotification = tempurl.URL+ ZGAccount;
+	}
+	if (tempurl.CODE.content == "COMMCRCLAM")
+	{
+		this.CommCreateClaims = tempurl.URL + ZGAccount;
+	}
+	if (tempurl.CODE.content == "COMMVCLAM")
+	{
+		this.CommViewClaims = tempurl.URL + ZGAccount;
+	}
+		if (tempurl.CODE.content == "DELEGATE")
+	{
+		this.Delegation = tempurl.URL;
+	}
+}
+
+// View order Part 2
+var Vieworder2 = result.Where(n => n.CODE.content == "VIEWORDER2");
+this.ViewOrder = this.ViewOrder + Vieworder2.GetFirst().URL;
+
+// View order part 2 for commercial
+var CommVieworder2 = result.Where(n => n.CODE.content == "COMMVORD2");
+this.CommViewOrder = this.CommViewOrder + CommVieworder2.GetFirst().URL;
+// Comm URL part 2 for commercial 
+var CommURLcode = result.Where(n => n.CODE.content == "COMMURL2");
+var CommURL = CommURLcode.GetFirst().URL;
+
+this.CommCreateClaims = this.CommCreateClaims + CommURL ;
+this.CommCreateOrder = this.CommCreateOrder + CommURL ;
+this.CommManageNotification = this.CommManageNotification + CommURL;
+this.CommVAccount = this.CommVAccount + CommURL;
+this.CommViewClaims = this.CommViewClaims + CommURL;
+

@@ -1,0 +1,553 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Activity
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.CRM.Global;
+import AP.FO.ProductDataMaintenance.Global;
+
+
+
+
+
+//Requesting changes to Strategic Account 9/2/2020 
+
+
+//var taskAcct = this.MainActivityParty.PartyUUID;	
+//var query = Customer.QueryByIdentification;
+////var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.UUID.content, "I", "EQ", taskAcct);
+//// Result
+//var resultData = query.ExecuteDataOnly(selectionParams);
+
+//var acctInternalID = resultData.GetFirst().InternalID;
+//var acct = Customer.Retrieve(acctInternalID);
+	 
+	 
+var ineternalID; 
+var customer;
+if (this.MainActivityParty.IsSet())
+{
+	ineternalID = this.MainActivityParty.Customer.InternalID;
+	customer = Customer.Retrieve(ineternalID);
+}
+if (customer.IsSet())
+{
+	if (customer.CustomerRole.RoleCode.content == "ZCRM00" || customer.CustomerRole.RoleCode.content == "CRM000")
+	{
+		if (this.ProcessingTypeCode == "Z001" && (this.GroupCode.content == "Z001" || this.GroupCode.content == "Z002" || this.GroupCode.content == "Z003"))
+		{ 
+			var parties = this.Party;
+			var countSAA = 0;
+					   
+			foreach (var party in parties)
+			{					   
+				if (party.RoleCode == "Z056")
+				{
+					if (countSAA > 2)
+					{
+						break;						   
+					}
+					countSAA = countSAA + 1;						 
+				}
+					   
+			}
+			
+			//************ADD SAA TO TASK**************************************
+			if (countSAA < 2)
+			{
+				var result;
+				var repQuery = LOOKUPBCO.QueryByElements;
+				var repSelectionParams = repQuery.CreateSelectionParams();
+				repSelectionParams.Add(repQuery.SELECTION2, "I", "EQ", "SAA-ADMIN");
+				var repResultData = repQuery.Execute(repSelectionParams);
+
+				if ((repResultData.Count() > 0) && (repResultData.GetFirst().IsSet()))
+				{
+					foreach (var repData in repResultData)
+					{
+						//var data = repResultData.GetFirst();
+						result = repData.SELECTION4;
+						var query = BusinessPartner.QueryByCommunicationData;
+							
+						// 1. Selection
+						var selectionParams = query.CreateSelectionParams();
+						selectionParams.Add(query.EMailURI.content, "I", "EQ", result);
+						// 2. Result
+						var resultData = query.ExecuteDataOnly(selectionParams);
+
+						if (resultData.Count() > 0)
+						{
+							var emp = resultData.GetFirst();
+							  	
+							var emp1 = this.Party.Create();
+							emp1.PartyUUID = emp.UUID.content;
+							emp1.RoleCode = "Z056";
+							  				
+						}
+						
+					}
+					//****ASSIGN SAA AS PROCESSOR AND EMP RES.******//
+					var firstSAA = repResultData.GetFirst();
+					if (firstSAA.IsSet())
+					{
+					    
+						//QUERY SAA DETAILS
+						var query = BusinessPartner.QueryByCommunicationData;
+							
+						// 1. Selection
+						var selectionParams = query.CreateSelectionParams();
+						selectionParams.Add(query.EMailURI.content, "I", "EQ", firstSAA.SELECTION4);
+						// 2. Result
+						var resultData = query.ExecuteDataOnly(selectionParams);
+						
+						if (resultData.Count() > 0)
+						{
+							var emp = resultData.GetFirst();
+							foreach (var member in this.Party)
+							{
+								if (member.RoleCode == "39")
+								{
+									member.Delete();
+									var emp1 = this.Party.Create();
+									emp1.PartyUUID = emp.UUID.content;
+									emp1.RoleCode = "39";
+								}
+
+								else if (member.RoleCode == "40")
+								{
+									member.Delete();
+									var emp1 = this.Party.Create();
+									emp1.PartyUUID = emp.UUID.content;
+									emp1.RoleCode = "40";
+								}
+					
+							}	
+						}		
+					}
+
+					//********END*******************//
+
+					
+				}
+				result.Clear();
+				repSelectionParams.Clear();
+				repResultData.Clear();
+			}
+
+			//********************END***********************************
+
+
+			
+				
+						 
+
+			if (this.LifeCycleStatusCode == "3")
+			{
+				foreach (var inst in customer.Common)
+				{
+					//if (this.GroupCode.content == "Z003")
+					//{
+					//break;
+					//}
+            
+					if (!this.GPOContract.IsInitial())
+					{
+						inst.GPOContract = this.GPOContract;
+					}
+				
+					if (!this.ServiceNeeds.IsInitial())
+					{
+						inst.ServiceNeeds = this.ServiceNeeds;
+					}
+					if (!this.ZAccountGeography.IsInitial())
+					{
+						inst.ZAccountGeography = this.ZAccountGeography;
+					}
+					if (!this.ZCommissionType.IsInitial())
+					{
+						inst.ZCommissionType = this.ZCommissionType;
+					}
+					if (!this.ZContractEnddate.IsInitial())
+					{
+						inst.ZContractEnddate = this.ZContractEnddate;
+					}
+					if (!this.ZContractPricing.ToString().IsInitial())
+					{
+						inst.ZContractPricing = this.ZContractPricing;
+					}
+					if (!this.ZContractScope.IsInitial())
+					{
+						inst.ZContractScope = this.ZContractScope;
+					}
+					if (!this.zEstOrd6m.IsInitial())
+					{
+						inst.zEstOrd6m = this.zEstOrd6m;
+					}
+					if (!this.ZInstallationResponsibility.IsInitial())
+					{
+						inst.ZInstallationResponsibility = this.ZInstallationResponsibility;
+					}
+					if (!this.ZNoGuaranteedPricing.ToString().IsInitial())
+					{
+						inst.ZNoGuaranteedPricing = this.ZNoGuaranteedPricing;
+					}
+					if (!this.ZnumOfFacilities.IsInitial())
+					{
+						inst.ZnumOfFacilities = this.ZnumOfFacilities;
+					}
+					if (!this.ZProjectionofannualyardspurchased.IsInitial())
+					{
+						inst.ZProjectionofannualyardspurchased = this.ZProjectionofannualyardspurchased;
+					}
+					if (!this.ZSplitType.IsInitial())
+					{
+						inst.ZSplitType = this.ZSplitType;
+					}
+					if (!this.ZPurchasingPlans.IsInitial())
+					{
+						inst.ZPurchasingPlans = this.ZPurchasingPlans;
+					}
+					
+					if (this.GroupCode.content == "Z001")
+					{  	
+						// ADD MVP COORDINATOR IN ACCOUNT FROM TASK
+						//var parties = this.Party;
+						foreach (var party in customer.CurrentEmployeeResponsible)
+						{
+							//Check if person already exists as an MVP in account. It will not update the existing 
+							//party in account instead will create a new one so a check is required
+							if (party.PartyRoleCode == "Z000")
+							{
+								break;
+							}
+
+							//Assign MVP Coordinator and SAA admin from Task to Account
+							
+							if (parties.Count() > 0)
+							{
+								foreach (var invParty in parties)
+								{
+
+									//Assign  MVP Co-ordinator in Account Team
+									if (invParty.RoleCode == "Z000")
+									{
+										
+										var emp1 = inst.ToRoot.CurrentEmployeeResponsible.Create();
+										emp1.EmployeeUUID.content = invParty.Employee.UUID.content;
+										emp1.PartyRoleCode = "Z000";					   
+							   
+									}
+
+									//Assign SAM in Account Team
+									if (invParty.RoleCode == "Z019")
+									{
+										
+										var emp1 = inst.ToRoot.CurrentEmployeeResponsible.Create();
+										emp1.EmployeeUUID.content = invParty.Employee.UUID.content;
+										emp1.PartyRoleCode = "Z019";					   
+							   
+									}
+
+									//Assign HQ AE in Account Team
+									if (invParty.RoleCode == "Z018")
+									{
+										
+										var emp1 = inst.ToRoot.CurrentEmployeeResponsible.Create();
+										emp1.EmployeeUUID.content = invParty.Employee.UUID.content;
+										emp1.PartyRoleCode = "Z018";					   
+							   
+									}
+
+									//Assign RVP in Account Team
+									if (invParty.RoleCode == "Z014")
+									{
+										
+										var emp1 = inst.ToRoot.CurrentEmployeeResponsible.Create();
+										emp1.EmployeeUUID.content = invParty.Employee.UUID.content;
+										emp1.PartyRoleCode = "Z014";					   
+							   
+									}
+									
+								} 
+							}	
+							parties.Clear();			   
+						
+						}
+
+						// ADD SAA-ADMIN TO ACCOUNT FROM BCO				
+						//
+						//if (inst.ZStrategic != true)
+						//{						
+						//var repQuery1 = LOOKUPBCO.QueryByElements;
+						//var repSelectionParams1 = repQuery1.CreateSelectionParams();
+						//repSelectionParams1.Add(repQuery1.SELECTION2, "I", "EQ", "SAA-ADMIN");
+						//var repResultData1 = repQuery1.Execute(repSelectionParams1);
+						//
+						//if ((repResultData1.Count() > 0) && (repResultData1.GetFirst().IsSet()))
+						//{
+						//foreach (var repData in repResultData1)
+						//{
+						//
+						////var data = repResultData.GetFirst();
+						//var result = repData.SELECTION4;
+						//var query = BusinessPartner.QueryByCommunicationData;
+						//
+						//// 1. Selection
+						//var selectionParams = query.CreateSelectionParams();
+						//selectionParams.Add(query.EMailURI.content, "I", "EQ", result);
+						//// 2. Result
+						//var resultData = query.ExecuteDataOnly(selectionParams);
+						//
+						//if (resultData.Count() > 0)
+						//{
+						//var emp = resultData.GetFirst();
+						//
+						//var emp1 = inst.ToRoot.CurrentEmployeeResponsible.Create();
+						//emp1.EmployeeUUID.content = emp.UUID.content;
+						//emp1.PartyRoleCode = "Z056";
+						//
+						//}
+						//}
+						//
+						//}
+						//}
+
+						//MARK THE ACCOUNT STRATEGIC
+						if (customer.CustomerRole.RoleCode.content == "ZCRM00")
+						{
+							inst.ZStrategic = true; 
+
+						}			 
+						
+					
+					}
+
+				}
+			}
+
+		}
+	}
+}
+
+//ADD PRODUCT MANAGER IN INVOLVED PARTIES
+
+//QUERY CATEGORY FROM Task Items BO
+//var taskItemsQuery = TaskItem.QueryByElements;
+//var itemsSelectionParams = taskItemsQuery.CreateSelectionParams();
+//itemsSelectionParams.Add(taskItemsQuery.TaskID.content, "I", "EQ", this.ID);
+//var itemsResultData = taskItemsQuery.Execute(itemsSelectionParams);
+//
+//if (itemsResultData.Count() > 0)
+//{
+//var items = itemsResultData.GetFirst().Item;
+//
+//foreach (var i in items)
+//{
+//var categoryID = i.ToMaterial.CrossProcessCategory.ProductCategoryIDKey.ProductCategoryInternalID.RemoveLeadingZeros();
+////QUERY BCO WITH CATEGORY
+//var result;
+//var repQuery = LOOKUPBCO.QueryByElements;
+//var repSelectionParams = repQuery.CreateSelectionParams();
+//repSelectionParams.Add(repQuery.SELECTION2, "I", "EQ", categoryID);
+//var repResultData = repQuery.Execute(repSelectionParams);
+//
+//if (repResultData.Count() > 0)
+//{
+//foreach (var j in repResultData)
+//{
+//var invParty = j.SELECTION4;
+////QUERY EMPLOYEE UUID
+//var query = BusinessPartner.QueryByCommunicationData;
+//
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.EMailURI.content, "I", "EQ", invParty);
+//// Result
+//var resultData = query.ExecuteDataOnly(selectionParams);
+//
+////ADD PRODUCT MANAGER
+//if(resultData.Count()>0)
+//{
+//var prodManager = this.Party.Create();
+//prodManager.PartyUUID = resultData.GetFirst().UUID.content;
+//prodManager.RoleCode = "Z012";
+//}
+//
+//}		
+//
+//}
+//}
+//
+//}
+
+//***************START******************//
+//Query Task Item BO
+
+//var queryProducts = TaskItem.QueryByElements;
+////var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selParams = queryProducts.CreateSelectionParams();
+//selParams.Add(queryProducts.TaskID.content, "I", "EQ", this.ID);
+//// Result
+//var resultData = queryProducts.Execute(selParams);
+//
+//if (resultData.Count() > 0)
+//{
+	////Query Product Category
+	//var categoryID="";
+	//if (resultData.GetFirst().ToMaterial.IsSet())
+	//{
+	    //categoryID = resultData.GetFirst().ToMaterial.CrossProcessCategory.ProductCategory.InternalID.RemoveLeadingZeros();
+		//if (categoryID != "")
+		//{
+			////Query Look up BCO 
+			//var result;
+			//var catQuery = LOOKUPBCO.QueryByElements;
+			//var catSelectionParams = catQuery.CreateSelectionParams();
+			//catSelectionParams.Add(catQuery.SELECTION2 , "I", "EQ", categoryID);
+			//catSelectionParams.Add(catQuery.ACTIVATE , "I", "EQ", true);
+			//var repResultData = catQuery.Execute(catSelectionParams);
+			////var repResultData = catQuery.Execute();
+//
+			//if (repResultData.Count() > 0)
+			//{
+				//foreach (var j in repResultData)
+				//{
+					//var invParty = j.SELECTION4;
+					////QUERY EMPLOYEE UUID
+					//var query = BusinessPartner.QueryByCommunicationData;
+				//
+					//// 2. Selection
+					//var selectionParams = query.CreateSelectionParams();
+					//selectionParams.Add(query.EMailURI.content, "I", "EQ", invParty);
+					//// Result
+					//var employee = query.ExecuteDataOnly(selectionParams);
+//
+					////ADD PRODUCT MANAGER
+					//if (employee.Count() > 0)
+					//{
+						//var prodManager = this.Party.Create();
+						//prodManager.PartyUUID = employee.GetFirst().UUID.content;
+						//prodManager.RoleCode = "Z012";
+					//}
+		 //
+				//}		
+		//
+			//}
+  //
+		//}
+	//}
+//
+//
+//
+//}
+//********************END*********************//
+
+//CREATE TASK ITEM
+
+//if (this.BusinessTransactionDocumentReference.Count() > 0)
+//{
+//var btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "72");
+//
+////IF POPA TASK
+//if (btd.Count() > 0 && this.ProcessingTypeCode == "Z002")
+//{
+//var btdID = btd.GetFirst().BusinessTransactionDocumentReference.ID.RemoveLeadingZeros();
+//
+////QUERY OPPT ID
+//var query = Opportunity.QueryByElements;
+////var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.ID.content, "I", "EQ", btdID);
+//// Result
+//var resultData = query.ExecuteDataOnly(selectionParams);
+//if (resultData.Count() > 0)
+//{
+//var opportunity = Opportunity.Retrieve(resultData.GetFirst().ID);
+//var task : elementsof TaskItem;
+//
+//task.TaskID.content = this.ID;
+//
+////**
+//
+//var taskItemElements : elementsof TaskItem.Item;
+//var taskItemInstance;
+//var rootInstance = TaskItem.Create();
+//
+//var oppItms = opportunity.Item;
+//if (oppItms.Count() > 0)
+//{
+//foreach (var oppitm in oppItms)
+//{   					
+//taskItemElements.RootTaskID.content = task.TaskID.content;
+//taskItemElements.ProductID = oppitm.ItemProduct.MaterialV1.InternalID.RemoveLeadingZeros();
+//taskItemInstance = rootInstance.Item.Create(taskItemElements);
+//
+//}
+//}
+//
+//}
+//}
+//}
+//
+//if (this.BusinessTransactionDocumentReference.Count() > 0)
+//{
+//var btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "72");
+//
+////IF POPA TASK
+//if (btd.Count() > 0 && this.ProcessingTypeCode == "Z002")
+//{
+//var btdID = btd.GetFirst().BusinessTransactionDocumentReference.ID.RemoveLeadingZeros();
+//
+////QUERY OPPT ID
+//var query = Opportunity.QueryByElements;
+////var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.ID.content, "I", "EQ", btdID);
+//// Result
+//var resultData = query.ExecuteDataOnly(selectionParams);
+//if (resultData.Count() > 0)
+//{
+//var opportunity = Opportunity.Retrieve(resultData.GetFirst().ID);
+//var task : elementsof TaskItem;
+//
+//task.TaskID.content = this.ID;
+//
+////**
+//
+//var taskItemElements : elementsof TaskItem.Products;
+//var taskItemInstance;
+//var rootInstance = TaskItem.Create();
+//
+//var oppItms = opportunity.Item;
+//if (oppItms.Count() > 0)
+//{
+//foreach (var oppitm in oppItms)
+//{   					
+//taskItemElements.RootTaskID.content = task.TaskID.content;
+//taskItemElements.ProductID = oppitm.ItemProduct.MaterialV1.InternalID.RemoveLeadingZeros();
+//taskItemInstance = rootInstance.Products.Create(taskItemElements);
+//
+//}
+//}
+//
+//}
+//}
+//}

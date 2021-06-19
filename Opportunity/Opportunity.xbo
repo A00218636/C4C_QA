@@ -1,0 +1,52 @@
+﻿import AP.Common.GDT;
+import AP.CRM.Global;
+
+[Extension] businessobject AP.CRM.Global:Opportunity raises MandatoryError, ZPerceivedbenefits,ZPerceivedCost{
+ 
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+		message MandatoryError text "Error &1": LANGUAGEINDEPENDENT_EXTENDED_Text;
+
+		message ZPerceivedbenefits text "Please enter Atleast two Perceived Benefits";
+		message ZPerceivedCost text "Please enter Atleast two Perceived Cost";
+
+		element ZExtFld:MediumText;
+		[Transient]element ZExtFld1:MediumText;
+      
+   		node InstalledObject {
+   	    } 
+    
+   		node Item {
+   	   //[Label("AE Low")]element ZAEPrice:Amount;
+	   //[Label("High Market")]element ZHMPrice:Amount;
+      		node ItemRevenuePlanReporting {
+      	    } 
+       
+      		node ItemQuantityPlanReporting {
+      	    } 
+
+        } 
+    
+   		node Party raises Duplicate{
+		message Duplicate text "Error &1":LANGUAGEINDEPENDENT_EXTENDED_Text;
+   	         element ZIsCopiedMember:Indicator;
+      		node PartyContactParty {
+      	    } 
+       
+      		node CompetitorProduct {
+      	    } 
+
+        } 
+    
+   		node RevenuePlanHeader {
+   	   
+      		node RevenuePlanReporting {
+      	    } 
+
+        } 
+    
+   		node ItemProposal {
+   	    } 
+     
+  
+}

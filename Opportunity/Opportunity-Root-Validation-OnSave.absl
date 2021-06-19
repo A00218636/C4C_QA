@@ -1,0 +1,261 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Opportunity
+		Node: Root
+		Validation: OnSave 
+
+		Script file signature
+		----------------------------
+		Returns: Boolean
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script before an instance of the business object is saved to the data base.
+		It can have a return value of either true or false, which determines whether the instance of the business object is saved or not.
+		All fields in this business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.FO.Product.Global;
+
+
+var errorCount = 0;
+var lv_nobtdrf = false;
+var activeQuote = 0;
+var orderColl : collectionof CustomerQuote;
+
+if (this.ProcessingTypeCode == "OPPT")
+{
+	var precLead = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "64" && k.BusinessTransactionDocumentRelationshipRoleCode == "1");
+	//Start: Validate Sales Cycle	
+	if(precLead.Count() == 0)
+	{
+		if(this.SalesCycle.IsSet())
+		{
+			if(this.SalesCycle.SalesCycleCode.content == "Z01")  // Z01 - IMPACT
+			{
+				raise MandatoryError.Create("E","Please select Sales Cycle as Late Stage.");
+				return false;
+			}
+		}
+	}//End: Validate Sales Cycle
+	if (this.SalesCycle.GetFromDB().SalesCyclePhaseCode.content == "Z01" && this.SalesCycle.SalesCyclePhaseCode.content == "Z02")
+	{
+		var extParties = this.ExternalParty;
+		var hasInvAcct = false;
+		foreach (var i in extParties)
+		{
+			if (!i.PartyKey.IsInitial())
+			{
+				if (!i.PartyKey.PartyID.IsInitial())
+				{
+					var partyInternalID = i.PartyKey.PartyID.content.RemoveLeadingZeros();
+					if (!partyInternalID.IsInitial())
+					{
+						var partyDetails = Customer.Retrieve(partyInternalID);
+						if (partyDetails.IsSet())
+						{
+							var partyRole = partyDetails.CustomerRole;
+							if (partyRole.IsSet())
+							{
+								if (partyRole.RoleCode.content == "CRM000")
+								{
+									hasInvAcct = true;
+								}
+							}
+						}
+					}
+				}
+			}
+		
+		}
+
+		if (hasInvAcct == false)
+		{
+			raise MandatoryError.Create("E", ": Please include at least one invoicing account in involved parties");
+			
+			errorCount = errorCount + 1;	
+		}
+
+		if (this.Item.Count() == 0)
+		{
+			raise MandatoryError.Create("E", ": Please add at least one Product for moving the Opportunity to Convince phase");
+			errorCount = errorCount + 1;
+	  	
+		}
+
+		else
+		{
+	
+			foreach (var i in this.Item)
+			{
+		
+				if (i.Quantity.content <= 0)
+				{
+					raise MandatoryError.Create("E", ": Quantity cannot be zero when moving the Opportunity to Convince phase");
+					errorCount = errorCount + 1;
+		 
+				}
+		
+			}
+	
+	
+		}
+		//CHECK GENERIC PRODUCT
+		foreach (var i in this.Item)
+		{
+			var catID = i.ItemProduct.ProductCategoryHierarchyProductCategory.InternalID.RemoveLeadingZeros();
+
+			if (catID == "Z0109")
+			{
+				raise MandatoryError.Create("E", ": Please replace the Generic Product");
+				errorCount = errorCount + 1;
+		
+			}
+
+		}
+	}
+}
+//CHECK CONVERSION BTD
+//if (this.BusinessTransactionDocumentReference.Count() != 0)
+//{
+//var btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "64");
+//
+//if (btd.Count() > 0)
+//{
+//if (this.ZRole != "ZCRM00")  
+//{
+//raise MandatoryError.Create("E", ": Please select Role as Non-Invoicing");
+//errorCount = errorCount + 1;	  
+//}
+//}	
+//}
+// 
+// Created By manish 24-02-2021
+var lv_save;
+if (this.BusinessTransactionDocumentReference.Count() > 0)
+{
+	var lv_btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "64");
+
+	if (lv_btd.Count() > 0)
+	{
+		var lv_lead = lv_btd.Lead.GetFirst();
+		if (lv_lead.QualificationLevelCode.content == "03")
+		{
+			var count = 0;
+			if (!lv_lead.ZPerceivedBenefits_1.IsInitial()) { count = count + 1; }
+			if (!lv_lead.ZPerceived_Benefits_2.IsInitial()) { count = count + 1; } 
+			if (!lv_lead.ZPerceived_Benefits_3.IsInitial()) { count = count + 1; }
+
+			if (!lv_lead.ZPerceived_Benefits_4.IsInitial()) { count = count + 1; }
+			if (count < 2)
+			{
+				raise ZPerceivedbenefits.Create("E");
+				errorCount = errorCount + 1;
+				//return false;
+			}
+			var Count_PC = 0;
+			if (!lv_lead.ZPerceivedCose_1.IsInitial()) { Count_PC = Count_PC + 1; }
+			if (!lv_lead.ZPerceivedCose_2.IsInitial()) { Count_PC = Count_PC + 1; }
+			if (!lv_lead.ZPerceivedCose_3.IsInitial()) { Count_PC = Count_PC + 1; }
+			if (!lv_lead.ZPerceivedCose_4.IsInitial()) { Count_PC = Count_PC + 1; }
+
+			if (Count_PC < 2)
+			{
+				raise ZPerceivedCost.Create("E");
+				errorCount = errorCount + 1;
+				//return false;
+			}
+
+			if (lv_lead.ZWhatisyourbudget_forthisproject.IsInitial())
+			{
+				raise MandatoryError.Create("E", ": To Meet Objectives - Q 3: What is your budget for this project ? is Required");				    	
+				errorCount = errorCount + 1; 
+			}
+			if (lv_lead.ZWhatisyourtimeline.IsInitial())
+			{
+				raise MandatoryError.Create("E", ": To Meet Objectives - Q 1: What is your time line ? is Required is Required");				    	
+				errorCount = errorCount + 1; 
+			}
+			if (lv_lead.Inadditiontoyouwhoelseisinvolvedinthisprocess.IsInitial())
+			{
+				raise MandatoryError.Create("E", ": To Meet Objectives - Q 2: In addition to you, who else is involved in this process ? is Required");				    	
+				errorCount = errorCount + 1; 
+			}
+		}
+	}
+}
+// END
+
+if (this.ProcessingTypeCode == "OPPT")
+{
+	if (this.SalesCycle.SalesCyclePhaseCode.content == "Z03") // M360SC-7033 - Check for Sales Phase Tie-it-up
+	{
+		//CHECK IF OPEN QUOTE EXISTS
+		if (this.BusinessTransactionDocumentReference.Count() > 0)
+		{
+			//var docs = this.BusinessTransactionDocumentReference;
+			var qte_btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "30");
+			if (!qte_btd.GetFirst().IsSet())
+			{
+				activeQuote = activeQuote + 1;
+			}	
+		}
+		else
+		{
+			activeQuote = activeQuote + 1;
+		}
+	}
+
+	if (this.Status.LifeCycleStatusCode == "4")  // M360SC-7044 - Check for Close Won Oppt Status
+	{
+		//Check if Order in not Sample Order
+		if (this.BusinessTransactionDocumentReference.Count() > 0)
+		{
+			//var docs = this.BusinessTransactionDocumentReference;
+			var ord_btd = this.BusinessTransactionDocumentReference.Where(k => k.BusinessTransactionDocumentReference.TypeCode == "2059");
+			if (ord_btd.Count() > 0)
+			{
+				foreach (var ord in ord_btd)
+				{
+					var order = CustomerQuote.Retrieve(ord.BusinessTransactionDocumentReference.ID);
+					orderColl.Add(order);	
+				}
+				var sampleO = orderColl.Where(n => n.ProcessingTypeCode == "ZOR");
+				if (!sampleO.GetFirst().IsSet())
+				{
+					lv_nobtdrf = true;
+				}
+			}
+			else
+			{
+				lv_nobtdrf = true;
+			} 
+		}
+		else
+		{
+			lv_nobtdrf = true;
+		} 	
+	} 
+}
+if (activeQuote != 0)
+{
+	raise MandatoryError.Create("E", ": Attach at least one Quote before an Opportunity Stage is set to Tie-It-Up");				    
+	errorCount = errorCount + 1;			
+}
+if (lv_nobtdrf == true)
+{
+	raise MandatoryError.Create("E", ": A non Sample Order needs to be present before Project can be set to Close Won");				    
+	errorCount = errorCount + 1;
+}
+if (errorCount == 0)
+{
+	return true;
+}
+else
+{
+	return false;
+}

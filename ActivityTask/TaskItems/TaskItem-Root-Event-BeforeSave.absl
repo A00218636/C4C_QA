@@ -1,0 +1,119 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: TaskItem
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.PC.ActivityManagement.Global;
+import AP.FO.ProductDataMaintenance.Global;
+import AP.CRM.Global;
+
+//Retrieve selected product
+//var taskID = this.TaskID;
+//var prodID = this.ProductID;
+var query = Activity.QueryByElements;
+//var resultData = query.ExecuteDataOnly();
+// 2. Selection
+var selectionParams = query.CreateSelectionParams();
+selectionParams.Add(query.ID, "I", "EQ", this.TaskID.content);
+selectionParams.Add(query.TypeCode, "I", "EQ", "542");
+// Result
+var resultData = query.ExecuteDataOnly(selectionParams);
+var taskUUID = resultData.GetFirst().UUID;
+
+var task = Activity.Retrieve(taskUUID);
+
+
+if (task.IsSet())
+{
+	this.ToActivity = task;
+
+}
+
+
+var prod = Material.Retrieve(this.ProductID);
+
+if (prod.IsSet())
+{
+	this.ToMaterial = prod;
+
+}
+
+
+
+//Delete PMs
+var parties = this.ToActivity.Party;
+if (parties.Count() > 0)
+{
+	foreach (var i in parties)
+	{
+		if (i.RoleCode == "Z012")
+		{
+			i.Delete();						  
+		}						
+	}
+
+}
+var categoryID = "";
+if (this.ToMaterial.IsSet())
+{
+	if (this.ToMaterial.CrossProcessCategory.IsSet())
+	{
+		if (this.ToMaterial.CrossProcessCategory.ProductCategory.IsSet())
+		{
+			categoryID = this.ToMaterial.CrossProcessCategory.ProductCategory.InternalID.RemoveLeadingZeros();
+			if (categoryID != "")
+			{
+
+				//Query Look up BCO 
+				var result;
+				var catQuery = LOOKUPBCO.QueryByElements;
+				var catSelectionParams = catQuery.CreateSelectionParams();
+				catSelectionParams.Add(catQuery.SELECTION2, "I", "EQ", categoryID);
+				catSelectionParams.Add(catQuery.ACTIVATE, "I", "EQ", true);
+				var repResultData = catQuery.Execute(catSelectionParams);
+				//var repResultData = catQuery.Execute();
+
+				if (repResultData.Count() > 0)
+				{
+					foreach (var j in repResultData)
+					{
+						var invParty = j.SELECTION4;
+						//QUERY EMPLOYEE UUID
+						var bpquery = BusinessPartner.QueryByCommunicationData;
+				
+						// 2. Selection
+						var bpselectionParams = bpquery.CreateSelectionParams();
+						bpselectionParams.Add(bpquery.EMailURI.content, "I", "EQ", invParty);
+						// Result
+						var employee = bpquery.ExecuteDataOnly(bpselectionParams);
+						var person = employee.Where(k => k.CategoryCode == "1");
+						//ADD PRODUCT MANAGER
+						if (person.Count() > 0)
+						{   
+
+				
+							var prodManager = this.ToActivity.Party.Create();
+							prodManager.PartyUUID = person.GetFirst().UUID.content;
+							prodManager.RoleCode = "Z012";					
+						}
+		 
+					}		
+		
+				}
+			}
+		}
+	}
+}
+

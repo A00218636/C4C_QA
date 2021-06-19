@@ -1,0 +1,44 @@
+﻿import AP.Common.GDT as apCommonGDT;
+import AP.CRM.Global;
+import AP.Common.Global;
+import AP.PDI.bo;
+
+businessobject URLConfig {
+
+        // Root node must not be specified, it is created implicitly
+        //
+        // Add elements here. 
+        // 
+        // To declare an element as alternative key, use the [AlternativeKey] annotation.
+        // Please note:
+        // - An alternative key of type UUID exists implicitly for each node, enabling the node
+        //   to be used as an association target.
+        // - The QueryByElements query is created automatically for each node.
+        // - Code completion is available with CTRL + SPACE.
+		element CPLUrl : String;
+		element OPEUrl : String;
+		element Offset : String;
+		element pricingGird: String;
+		element cplAccount: String;
+		element Account:ID;
+		element BusinessPartnerID: BusinessPartnerInternalID;
+		element VAccount:String;
+		element CreateOrder:String;
+		element ViewOrder:String;
+		element ManageNotification:String;
+		element CreateClaims:String;
+		element ViewClaims:String;
+		element CommVAccount:String;
+		element CommCreateOrder:String;
+		element CommViewOrder:String;
+		element CommManageNotification:String;
+		element CommCreateClaims:String;
+		element CommViewClaims:String;
+		element Delegation:String;
+		element CommercialIndicator:Indicator;
+		element accountRefrence:ID;
+		element SalesOrder:ID;
+		element HybrisOrderURL:String;
+		action LaunchURL;
+		action ToHybris;
+}

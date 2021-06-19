@@ -1,0 +1,92 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Opportunity
+		Node: Root
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+
+
+var account;
+if (this.ProspectParty.IsSet())
+{
+	var acctUUID = this.ProspectParty.PartyUUID;
+	account = Customer.Retrieve(acctUUID);
+	if(account.IsSet())
+	{
+		if(account.CurrentDefaultAddressInformation.IsSet())
+		{
+			if(account.CurrentDefaultAddressInformation.Address.IsSet())
+			{
+				if(account.CurrentDefaultAddressInformation.Address.DefaultPostalAddressRepresentation.IsSet())
+				{
+					var countryCode = account.CurrentDefaultAddressInformation.Address.DefaultPostalAddressRepresentation.CountryCode;
+					if(countryCode == "US")
+					{
+						this.TotalRevenue.currencyCode = "USD";
+						this.SalesForecast.ExpectedRevenueAmount.currencyCode = "USD";						
+					}	
+					if(countryCode == "CA")
+					{
+						this.TotalRevenue.currencyCode = "CAD";
+						this.SalesForecast.ExpectedRevenueAmount.currencyCode = "CAD";
+					}					
+				}
+			}
+		}
+	}
+}
+//var acctID = this.ProspectParty.PartyKey.PartyID.content.RemoveLeadingZeros();
+//
+//var acctDetails = Customer.Retrieve(acctID);
+//
+//if (acctDetails.IsSet())
+//{
+//
+//if(acctDetails.Status.LifeCycleStatusCode == "2")
+//{
+////this.ZRole.Clear();
+//if(acctDetails.CustomerRole.RoleCode.content == "CRM000"){
+//this.ZRole =  "CRM000";
+//}
+//else
+//{
+//this.ZRole =  "BUP002";
+//}
+//
+//}
+//
+//else{
+//
+//this.ZRole = "ZCRM00";
+//acctDetails.CustomerRole.RoleCode.content = this.ZRole.Trim();
+//
+//}
+//
+//}
+//**************************** Code added by manish 05/02/2021
+var i = 0;
+//
+//if (this.IsSet())
+//{
+	//foreach (var Role in this.ExternalParty)
+	//{
+		//if (Role.IsSet() && !Role.RoleCode.IsInitial() && Role.RoleCode == "Z061")
+		//{
+//
+			//this.ZPROJNAME = Role.PartyKey.PartyID.content + this.ZPROJSTREET + this.ZPROJLOC + this.ZPROJCITY + this.ZPROJST;
+			//var x = 0;
+		//}
+	//}
+//}
+//********************************

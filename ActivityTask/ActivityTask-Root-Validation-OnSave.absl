@@ -1,0 +1,100 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Activity
+		Node: Root
+		Validation: OnSave 
+
+		Script file signature
+		----------------------------
+		Returns: Boolean
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script before an instance of the business object is saved to the data base.
+		It can have a return value of either true or false, which determines whether the instance of the business object is saved or not.
+		All fields in this business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+
+
+var errCount = 0;
+////Check if this task is POPA - Z002 relevant or not
+//if (this.ProcessingTypeCode == "Z002")
+//{
+	////Query the POPA bo
+	//var taskItemsQuery = TaskItem.QueryByElements;
+	//var itemsSelectionParams = taskItemsQuery.CreateSelectionParams();
+	//itemsSelectionParams.Add(taskItemsQuery.TaskID.content, "I", "EQ", this.ID);
+	//var itemsResultData = taskItemsQuery.Execute(itemsSelectionParams);
+	////if (itemsResultData.Count() == 0)
+	////{
+		////raise POPAError.Create("E", ": At least one product is mandatory for a POPA task.");			
+		////errCount = errCount + 1;
+	////}
+////
+	//var reqPriceBlankRecords = itemsResultData.Where(k => k.RequestedPrice.IsInitial());
+	//if (reqPriceBlankRecords.Count() > 0)
+	//{
+	//
+		//raise POPAError.Create("E", ": Requested Price is mandatory for the Products in POPA task.");			
+		//errCount = errCount + 1;
+	//}
+//
+	//var quanBlankRec = itemsResultData.Where(k => k.Quantity.IsInitial());
+	//if (reqPriceBlankRecords.Count() > 0)
+	//{
+	//
+		//raise POPAError.Create("E", ": Quantity is mandatory for the Products in POPA task.");			
+		//errCount = errCount + 1;
+	//}
+//
+	//var notesBlankRec = itemsResultData.Where(k => k.Quantity.IsInitial());
+	//if (notesBlankRec.Count() > 0)
+	//{
+	//
+		//raise POPAError.Create("E", ": Notes are mandatory for a POPA task.");			
+		//errCount = errCount + 1;
+	//}
+	//var compPrice = itemsResultData.Where(k => k.CompetitorPrice.IsInitial());
+	//if (compPrice.Count() > 0)
+	//{
+	//
+		//raise POPAError.Create("E", ": Competitor Price is mandatory for a POPA task.");			
+		//errCount = errCount + 1;
+	//}
+	//var CompManftr = itemsResultData.Where(k => k.CompManftr.IsInitial());
+	//if (CompManftr.Count() > 0)
+	//{
+	//
+		//raise POPAError.Create("E", ": Competitor Manufacturer is mandatory for a POPA task.");			
+		//errCount = errCount + 1;
+	//}
+	//var CompProd = itemsResultData.Where(k => k.CompProd.IsInitial());
+	//if (CompProd.Count() > 0)
+	//{
+	//
+		//raise POPAError.Create("E", ": Competitor Product is mandatory for a POPA task.");			
+		//errCount = errCount + 1;
+	//}
+//
+//}
+//
+//
+//if(this.CloseDate.LessThan(Context.GetCurrentSystemDate()))
+//{
+ //
+ //raise POPAError.Create("E",": Close Date cannot be a Past Date.");
+ //errCount = errCount+1;
+//
+//}
+if (errCount > 0)
+{
+	return false;
+}
+else
+{
+	return true;
+}
