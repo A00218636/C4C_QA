@@ -1,0 +1,162 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: BusinessPartnerRelationship
+		Node: Root
+		Event: OnDelete 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when the instance of the business object gets deleted and SAVE is triggered.
+		- The fields on the current node are always read-only.
+		- The fields from other nodes follow regular read/write behavior.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.PC.IdentityManagement.Global;
+
+
+var userid = "";
+var identityUUID = Context.GetCurrentIdentityUUID();
+var identity = Identity.Retrieve(identityUUID);
+if (identity.IsSet())
+{
+	userid = identity.ID.content;
+}
+
+
+//TO NOT TRIGGER BACK AN UPDATE BACK TO HYBRIS PUT A CHECK
+if (userid != "_CAMS_ODATA" && userid != "_CPI")
+{
+	var req : Library::Contact.Contact_C4C.Request;
+
+	
+	var contact = this.SecondBusinessPartner;
+
+	if (contact.IsSet())
+	{	
+		if (contact.Status.LifeCycleStatusCode == "2" || contact.Status.LifeCycleStatusCode == "3" || contact.Status.LifeCycleStatusCode == "4")
+		{
+			
+			
+			var isContactPersonForAnyone = contact.IsContactPersonFor.BusinessPartnerRelationship.Count();
+
+			//var fb = this.FirstBusinessPartner.InternalID;
+			//var sb = this.SecondBusinessPartner.InternalID;
+			//foreach(var rel in contact.Relationship)
+			//{
+			//var bpid = contact.Relationship.GetFirst().RelationshipBusinessPartnerInternalID;
+			
+			//}
+			//if (contact.Relationship.Count() == 0)
+			//if (bpid == fb)
+			if(isContactPersonForAnyone == 0)
+			{	
+				var fbp = this.FirstBusinessPartner;
+				
+				var custDetails = Customer.Retrieve(fbp.InternalID);				
+				var gid = custDetails.Common.GetFirst().ZGAN;
+				if (!gid.IsInitial())
+				{				
+					req.AccountID.Add(gid);
+				}
+				
+				//GET EMAIL ID
+				var x = contact.Common.GetFirst().ZContactEmail;
+				req.Email = x.content;
+				
+				contact.FlagAsObsolete();
+				req.Status = contact.Status.LifeCycleStatusCode;
+
+				var response = Library::Contact.Contact_C4C(req, " ", "Contact_CPI_Out");
+				req.Clear();
+
+			}
+		   
+			else
+			{	
+				var tyi = contact.Relationship;
+				foreach (var rel in contact.Relationship)
+				{  
+					if (rel.RoleCode.content == "BUR001-2")
+					{
+						var bpID = rel.RelationshipBusinessPartnerInternalID;
+
+						var customerDetails = Customer.Retrieve(bpID);				
+						var gan = customerDetails.Common.GetFirst().ZGAN;
+						if (!gan.IsInitial())
+						{				
+							req.AccountID.Add(gan);
+						}
+		
+					}
+				}
+
+			
+   
+				if (req.AccountID.Count() > 0)
+				{
+					req.FirstName = contact.CurrentCommon.Person.Name.GivenName;
+					req.LastName = contact.CurrentCommon.Person.Name.FamilyName;
+					//req.MiddleName = this.CurrentCommon.Person.Name.MiddleName;
+					req.Birthdate = contact.CurrentCommon.Person.BirthDate.ToString();
+					req.ContactID = contact.InternalID;
+					//req.CreatedBy = this.CreationIdentity.FormattedName;
+
+		
+		
+					if (contact.CurrentDefaultIsContactPersonFor.IsSet())
+					{
+						if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.IsSet())
+						{
+							if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+							{
+								if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+								{
+									if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+									{
+										var workAdd = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress;
+										if (workAdd.DefaultEMail.IsSet())
+										{
+											req.Email = workAdd.DefaultEMail.URI.content;
+										}
+										if (workAdd.DefaultFacsimile.IsSet())
+										{
+											req.Fax = workAdd.DefaultFacsimile.FormattedNumberDescription; 
+										}
+					
+										//
+										if (workAdd.DefaultMobilePhone.IsSet())
+										{
+											req.Mobile = workAdd.DefaultMobilePhone.FormattedNumberDescription; 
+										}
+										//
+										if (workAdd.DefaultConventionalPhone.IsSet())
+										{
+											req.WorkPhone = workAdd.DefaultConventionalPhone.FormattedNumberDescription; 
+										}
+										req.Status = contact.Status.LifeCycleStatusCode;
+										if (workAdd.DefaultWorkplaceRepresentation.IsSet())
+										{
+											req.JobTitle = workAdd.DefaultWorkplaceRepresentation.FunctionalTitleName; 
+										}
+
+									}
+									req.Salutation = contact.CurrentCommon.Person.Name.FormOfAddressCode.content;
+									//req.Salutation = this.CurrentCommon.Person.Name.AcademicTitleCode.content;
+									req.PrimaryRole = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.BusinessPartnerFunctionTypeCode.GetDescription();
+
+									//
+									var responseHyb = Library::Contact.Contact_C4C(req, " ", "Contact_CPI_Out");
+						
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

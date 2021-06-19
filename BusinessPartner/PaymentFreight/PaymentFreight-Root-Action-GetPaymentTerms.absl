@@ -1,0 +1,177 @@
+/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: PaymentFreight
+		Node: Root
+		Action: GetPaymentTerms 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import AP.PDI.bo;
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.PDI.Utilities;
+
+var accID = this.AccountID;
+
+/**********QUERY CUSTOM BO WITH ACCOUNT ID AND DELETE DATA****************/
+
+var query1 = PaymentFreight.QueryByElements;
+var selectionParams1 = query1.CreateSelectionParams();
+selectionParams1.Add(query1.AccountID, "I", "EQ", accID);
+selectionParams1.Add(query1.IsPayTermData, "I", "EQ", true);
+
+//selectionParams1.Add(query1.AccountID,"I","EQ","");
+//// Result
+var resultData1 = query1.Execute(selectionParams1);
+//var resultData1 = query1.Execute();
+
+foreach (var ele in resultData1)
+{
+	ele.Delete();
+}
+
+/*********************END******************/
+//Query Account
+
+var query = BusinessPartner.QueryByIdentification;
+var resultData;
+// = query.ExecuteDataOnly();
+// 2. Selection
+var selectionParams = query.CreateSelectionParams();
+selectionParams.Add(query.InternalID, "I", "EQ", accID);
+// Result
+ resultData = query.ExecuteDataOnly(selectionParams);
+ var accInternalID = resultData.GetFirst().InternalID;
+
+ //var bpExt = Customer.Retrieve(accInternalID);
+
+ var customer = Customer.Retrieve(this.AccountID);
+ if(customer.IsSet())
+{
+  this.ToCustomer = customer;
+}
+
+var scenarioName = "PaymentTermsCS";
+var serviceName = "PaymentTerms";
+var httpMethod = "POST";
+
+
+var gan = customer.Common.GetFirst().ZGAN;
+//var gan = "0001082091";
+var httpResource = "";
+var body = "{" +
+  "\"buId\"" + ":" + "\"1\"" + "," +
+  "\"erpId\"" + ":" + "\"1\"" + "," +
+  "\"globalAccountNumber\"" + ":" + "\"" + gan + "\"" + 
+ "}";
+
+		
+var contentType = "application/json";
+var headerParameter : collectionof NameAndValue;
+var urlParam : collectionof NameAndValue;
+var urlParametrEntry : NameAndValue;
+var headerParameterEntry : NameAndValue;
+
+	
+headerParameterEntry.Name = "Authorization";
+headerParameterEntry.Value = "Basic ZU1wb3dlcl9oeWJyaXM6R3IzQHRKbzgh";
+headerParameter.Add(headerParameterEntry);
+
+var ws_result = WebServiceUtilities.ExecuteRESTService(scenarioName, serviceName, httpMethod, httpResource, urlParam, headerParameter, contentType, body);
+
+var len = 1;
+var keys : collectionof String;
+var accName ;
+var dateTime;
+var infoMsg;
+var tactCat;
+var prodType;
+var prodTerm;
+var i ;
+var jsonString = ws_result.Content;
+var Result : JsonResult;
+
+var elPaymentTerms_Root: elementsof PaymentFreight;
+//var instPaymentTerms;
+//var elPaymentTerms_PT : elementsof PaymentFreight.PaymentTerms;
+
+/********************Retrive Header Information*****************/
+
+keys.Add("AccountName");
+keys.Add("DateTimeSFDC");
+keys.Add("InfoMessage");
+
+
+if (Json.IsValidJson(jsonString))
+{
+	Result = Json.ParseKeyValues(keys, jsonString);
+	this.AccountName = Result.KeyValue.GetByIndex(1).Value;
+	this.PTDateTime = Result.KeyValue.GetByIndex(2).Value;
+	this.InfoMessage = Result.KeyValue.GetByIndex(3).Value + ". "+"Red Text signifies non-standard terms.";
+	this.IsHeaderElement = true;
+	this.IsPayTermData = true;
+
+}
+	//instPaymentTerms = PaymentFreight.Create();
+keys.Clear();
+Result.Clear();
+/*****************END*******************************/
+
+//to find the number of entries.
+
+var noOfEntries = 0;
+var a = 0;
+var vPattern = "prodTypeDesc";
+while(jsonString.Find(vPattern, a) != -1)
+{	
+	a = jsonString.Find(vPattern, a)+vPattern.Length();
+	noOfEntries = noOfEntries+1; 
+}
+
+while(len<= noOfEntries)
+{
+	i=len.ToString();
+	tactCat = "TermsDataArray["+i+"].TacticalCat";
+	keys.Add(tactCat);
+	prodType = "TermsDataArray["+i+"].prodTypeDesc";
+	keys.Add(prodType);
+	prodTerm = "TermsDataArray["+i+"].termsDesc";
+	keys.Add(prodTerm);
+	prodTerm = "TermsDataArray["+i+"].nonStdInd";
+	keys.Add(prodTerm);
+	
+
+	if (Json.IsValidJson(jsonString))
+	{
+		Result = Json.ParseKeyValues(keys, jsonString);
+	}
+	//if(instPaymentTerms.IsSet())
+	//{
+	    elPaymentTerms_Root.AccountID = this.AccountID;
+		elPaymentTerms_Root.TacticalCat = Result.KeyValue.GetByIndex(1).Value;
+		elPaymentTerms_Root.ProdTypeDesc = Result.KeyValue.GetByIndex(2).Value;
+		elPaymentTerms_Root.TermsDesc = Result.KeyValue.GetByIndex(3).Value;
+		if(Result.KeyValue.GetByIndex(4).Value.Contains("Y"))
+		{
+		elPaymentTerms_Root.BackColor = "NEGATIVE";
+		}
+		else
+		{
+		elPaymentTerms_Root.BackColor = "STANDARD";
+		}
+		elPaymentTerms_Root.IsHeaderElement = false;
+		elPaymentTerms_Root.IsPayTermData = true;
+		PaymentFreight.Create(elPaymentTerms_Root); 
+		//instPaymentTerms.PaymentTerms.Create(elPaymentTerms_PT);
+	//}
+
+Result.Clear();
+keys.Clear();
+
+len = len+1;
+}

@@ -1,0 +1,11 @@
+import AP.Common.GDT;
+import AP.FO.BusinessPartnerRelationship.Global;
+
+[Extension] businessobject AP.FO.BusinessPartnerRelationship.Global:BusinessPartnerRelationship raises DuplicateBP {
+ 
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+		message DuplicateBP text "Business Partner already exists &1.": LANGUAGEINDEPENDENT_EXTENDED_Text;
+     
+  
+}

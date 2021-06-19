@@ -1,0 +1,52 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: PaymentFreight
+		Node: Root
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+
+var v = this.DataLoaded;
+//if(this.DataLoaded == "TRUE"){
+//this.GetPaymentTerms();
+//this.GetPaymentTerms();
+//}
+if(this.DataLoaded =="FreightInformation"){
+this.GetFreightInfo();
+}
+if(this.DataLoaded =="PaymentTerms"){
+this.GetPaymentTerms();
+}
+/**********QUERY CUSTOM BO WITH ACCOUNT ID****************/
+
+//var query = PaymentFreight.QueryByElements;
+//var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.AccountID, "I", "EQ", this.AccountID);
+//// Result
+ //resultData = query.ExecuteDataOnly(selectionParams);
+//foreach (var i in resultData)
+//{
+	////GET DATA FROM BO INSTANCE AND ASSIGN IT TO this INSTANCE
+	//this.CARPETDLVDAYS = i.CARPETDLVDAYS;
+	//this.PRIMEWHSE = i.PRIMEWHSE;
+//
+//}
+
+
+
+
+
+
+//this.GetPaymentTerms();
+

@@ -1,0 +1,249 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: PaymentFreight
+		Node: Root
+		Action: GetFreightInfo 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import AP.PDI.bo;
+import ABSL;
+import AP.PDI.Utilities;
+import AP.PC.IdentityManagement.Global;
+import AP.CRM.Global;
+import AP.FO.BusinessPartner.Global;
+import BASIS.Global as basisGlobal;
+
+
+//Pass GAN
+var accID = this.AccountID;
+
+/**********QUERY CUSTOM BO WITH ACCOUNT ID AND DELETE DATA****************/
+
+var query1 = PaymentFreight.QueryByElements;
+var selectionParams1 = query1.CreateSelectionParams();
+selectionParams1.Add(query1.AccountID, "I", "EQ", accID);
+selectionParams1.Add(query1.IsPayTermData, "I", "EQ", false);
+
+//selectionParams1.Add(query1.AccountID,"I","EQ","");
+//// Result
+var resultData1 = query1.Execute(selectionParams1);
+//var resultData1 = query1.Execute();
+
+foreach (var ele in resultData1)
+{  
+
+	ele.Delete();
+}
+
+/*********************END******************/
+
+
+
+//Query Account
+
+var query = BusinessPartner.QueryByIdentification;
+var resultData = query.ExecuteDataOnly();
+// 2. Selection
+var selectionParams = query.CreateSelectionParams();
+selectionParams.Add(query.InternalID, "I", "EQ", accID);
+// Result
+resultData = query.ExecuteDataOnly(selectionParams);
+var accInternalID = resultData.GetFirst().InternalID;
+
+//var bpExt = Customer.Retrieve(accInternalID);
+
+var customer = Customer.Retrieve(this.AccountID);
+
+if (customer.IsSet())
+{
+	this.ToCustomer = customer;
+
+}
+
+//this.CARPETDLVDAYS = customer.BusinessPartnerSolutionExtensions.CARPETDLVDAYS;
+
+
+//var i=0;
+////RUN WHILE LOOP TILL THE COUNT API GETS DATA
+
+//var freightInfo : elementsof PaymentFreight;
+//freightInfo.ProductTypeFreight = "Carpet Tile";
+//freightInfo.AccountID = this.AccountID;
+//freightInfo.DeliveryRate.content = 450;
+//freightInfo.DeliveryRate.currencyCode = "USD";
+//freightInfo.DeliveryMinimum.content = 133;
+//freightInfo.DeliveryMinimum.currencyCode = "USD";
+//var rootInstance = PaymentFreight.Create(freightInfo);
+////
+
+
+var scenarioName = "FreightInfoCS";
+var serviceName = "FreightInfo";
+var httpMethod = "POST";
+
+//Retrieve GAN
+var cust = Customer.Retrieve(this.AccountID);
+
+var gan = cust.Common.GetFirst().ZGAN;
+//var gan = "0001267929";
+
+//{"buId":"1","erpId":"1","globalAccountNumber":"'+globalAccountNumber+'"}
+	
+var httpResource = "";
+var body = "{" +
+  "\"buId\"" + ":" + "\"1\"" + "," +
+  "\"erpId\"" + ":" + "\"1\"" + "," +
+  "\"globalAccountNumber\"" + ":" + "\"" + gan + "\"" + 
+ "}";
+
+		
+var contentType = "application/json";
+var headerParameter : collectionof NameAndValue;
+var urlParam : collectionof NameAndValue;
+var urlParametrEntry : NameAndValue;
+var headerParameterEntry : NameAndValue;
+
+	
+headerParameterEntry.Name = "Authorization";
+headerParameterEntry.Value = "Basic ZU1wb3dlcl9oeWJyaXM6R3IzQHRKbzgh";
+headerParameter.Add(headerParameterEntry);
+
+var ws_result = WebServiceUtilities.ExecuteRESTService(scenarioName, serviceName, httpMethod, httpResource, urlParam, headerParameter, contentType, body);
+
+//CATEGORY":"Soft Surface","PRODTYPE":"Residential Broadloom","WCFRTRTE":".46","WCMINFRT":"35.00","MDFRTRTE":".64","MDMINFRT":"55.00"
+
+var len = 1;
+var keys : collectionof String;
+var primeWHSE;
+var carpetDLVDAYS;
+var palletDLVDAYS;
+var categoryKey;
+var prodType;
+var picRate;
+var picMin;
+var delRate;
+var delMin;
+var i;
+var jsonString = ws_result.Content;
+var Result : JsonResult;
+//var freightDInfo : elementsof PaymentFreight.Freight;
+var freightInfo : elementsof PaymentFreight;
+//var rootInstance = PaymentFreight.Create(); 
+
+
+
+
+//****RETRIEVE HEADER LEVEL FREIGHT INFORMATION***************//
+
+keys.Add("PRIMEWHSE");
+keys.Add("CARPETDLVDAYS");
+keys.Add("PALLETDLVDAYS");
+keys.Add("DATETIMESFDC");
+keys.Add("FUELSCHGPCT");
+
+
+if (Json.IsValidJson(jsonString))
+{
+	Result = Json.ParseKeyValues(keys, jsonString);
+	this.PRIMEWHSE = Result.KeyValue.GetByIndex(1).Value;
+	this.CARPETDLVDAYS = Result.KeyValue.GetByIndex(2).Value;
+	this.PALLETDLVDAYS = Result.KeyValue.GetByIndex(3).Value;
+	this.DATETIME = Result.KeyValue.GetByIndex(4).Value + "(Rates may change)";
+	this.FUELSCHGPCT = Result.KeyValue.GetByIndex(5).Value+"%";
+	this.IsHeaderElement = true;
+	this.IsPayTermData = false;
+	
+	
+	//PaymentFreight.Create(freightHInfo);
+	//freightInfo.DATETIME =  Library::DateTime.ParseFromString(Result.KeyValue.GetByIndex(4).Value);
+
+}
+
+keys.Clear();
+Result.Clear();
+//*********END*************//
+
+
+//to find the number of entries.
+
+var noOfEntries = 0;
+var a = 0;
+var vPattern = "WCFRTRTE";
+while (jsonString.Find(vPattern, a) != -1)
+{	
+	a = jsonString.Find(vPattern, a) + vPattern.Length();
+	noOfEntries = noOfEntries + 1; 
+}
+
+while (len <= noOfEntries)
+{
+	i = len.ToString();
+	categoryKey = "FRIEGHTARRAY[" + i + "].CATEGORY";
+	keys.Add(categoryKey);
+	prodType = "FRIEGHTARRAY[" + i + "].PRODTYPE";
+	keys.Add(prodType);
+	picRate = "FRIEGHTARRAY[" + i + "].WCFRTRTE";
+	keys.Add(picRate);
+	picMin = "FRIEGHTARRAY[" + i + "].WCMINFRT";
+	keys.Add(picMin);
+	delRate = "FRIEGHTARRAY[" + i + "].MDFRTRTE";
+	keys.Add(delRate);
+	delMin = "FRIEGHTARRAY[" + i + "].MDMINFRT";
+	keys.Add(delMin);
+
+
+	//var result1 = ws_result.ContentType;
+
+	
+	var result2 = ws_result.Code;
+
+	if (Json.IsValidJson(jsonString))
+	{
+		Result = Json.ParseKeyValues(keys, jsonString);
+	}
+	//var freightInfo : elementsof PaymentFreight;
+
+	freightInfo.AccountID = this.AccountID;
+
+	freightInfo.Category = Result.KeyValue.GetByIndex(1).Value;
+	//if(prodType.Matches(Result.KeyValue.GetByIndex(2).Key))
+	//{
+	freightInfo.ProductTypeFreight = Result.KeyValue.GetByIndex(2).Value;
+	//}
+	//if(picRate.Matches(Result.KeyValue.GetByIndex(3).Key))
+	//{
+	freightInfo.PickupRate.content = Library::Numeric.ParseFromString(Result.KeyValue.GetByIndex(3).Value);
+	freightInfo.PickupRate.currencyCode = "USD";
+	//}
+	//if(picMin.Matches(Result.KeyValue.GetByIndex(4).Key))
+	//{
+	freightInfo.PickupMinimum.content = Library::Numeric.ParseFromString(Result.KeyValue.GetByIndex(4).Value);
+	freightInfo.PickupMinimum.currencyCode = "USD";
+	//}
+	//if(delRate.Matches(Result.KeyValue.GetByIndex(5).Key))
+	//{
+	freightInfo.DeliveryRate.content = Library::Numeric.ParseFromString(Result.KeyValue.GetByIndex(5).Value);
+	freightInfo.DeliveryRate.currencyCode = "USD";
+	//}
+	//if(delMin.Matches(Result.KeyValue.GetByIndex(6).Key))
+	//{
+	freightInfo.DeliveryMinimum.content = Library::Numeric.ParseFromString(Result.KeyValue.GetByIndex(6).Value);
+	freightInfo.DeliveryMinimum.currencyCode = "USD";
+	//}
+	freightInfo.IsHeaderElement = false;
+	freightInfo.IsPayTermData = false;
+	PaymentFreight.Create(freightInfo); 
+
+	Result.Clear();
+	keys.Clear();
+
+	len = len + 1;
+}
+
+//raise Success.Create("S", "Freight Information ");	

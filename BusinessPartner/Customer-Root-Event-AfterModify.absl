@@ -1,0 +1,120 @@
+/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Customer
+		Node: Root
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+import AP.PC.IdentityManagement.Global;
+
+
+var username;
+var common = this.Common;
+var bupaUiTransform = this.BupaUiTransformation;
+var identityUUID = Context.GetCurrentIdentityUUID();
+
+var identity = Identity.Retrieve(identityUUID);
+
+if (identity.IsSet())
+{
+
+	username = identity.FormattedName;
+
+}
+
+if (username != "_CAMS_ODATA")
+{
+
+	//IF CUSTOM PARENT ACCOUNT FIELD IS CHANGED THEN ASSIGN DESCRIPTION FOR THE SAME
+	if (!common.GetFirst().ZPrtAcct.IsInitial())
+	{
+	    var parentAcct = common.GetFirst().ZPrtAcct.RemoveLeadingZeros();
+		var resultData = Customer.Retrieve(parentAcct);
+		if (resultData.IsSet())
+		{
+			common.GetFirst().ZParentDesc = resultData.CurrentCommon.BusinessPartnerFormattedName;
+		
+		}
+		
+	
+	}
+
+}
+//this.Common.GetFirst().ZEbody = "mailto:"+ this.CurrentDefaultAddressInformation.AddressSnapshot.DefaultEMail.URI.content;
+////+"?Subject=you can enlist the support of American Express MEETINGS EXPERT Professionals to find venues, negotiate rates and review hotel contracts.</p><p>This solution is available free of charge, but qualifying meetings require";
+//var t = this.Common.GetFirst().ZEbody;
+
+//var count = this.Common.Count();
+//var body = "C4C Opportunity.&Body=Pre-orders with a complimentary pair of the Galaxy Buds Live";
+//foreach (var u in this.Common)
+//{
+//if (this.CurrentDefaultAddressInformation.IsSet())
+//{
+//if (this.CurrentDefaultAddressInformation.AddressSnapshot.IsSet())
+//{
+//if (!this.CurrentDefaultAddressInformation.AddressSnapshot.DefaultEMail.URI.IsInitial())
+//{
+//var t = this.CurrentDefaultAddressInformation.AddressSnapshot.DefaultEMail.URI.content.TrimRight() + "?Subject="+body.Trim();
+//u.ZEbody = t.Trim();
+//}
+//}
+//}
+//
+//}
+
+//import CommunicationServicesManagement.Global;
+//var query = ObjectIdentifierMapping.QueryByElements;
+//var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.RemoteObjectID.content, "I", "EQ", "785685");
+//// Result
+//resultData = query.ExecuteDataOnly(selectionParams);
+
+
+//this.BupaUiTransformation.ParentAccount.ParentAccountUUID = "";
+
+
+//if (this.BupaUiTransformation.IsSet())
+//{
+//var parentUUID = this.BupaUiTransformation.ParentAccount.ParentAccountUUID;	
+//var otherDetails = this.CategoryCode;	
+//
+//if (!parentUUID.IsInitial())
+//{
+//
+//var parent = Customer.Retrieve(parentUUID);	  
+////var members = parent.CurrentEmployeeResponsible.Count();
+//var parentCommon = parent.Common.GetFirst();
+//if (parentCommon.IsSet())
+//{			
+//if (parentCommon.ZStrategic == true)
+//{
+//foreach (var member in parent.CurrentEmployeeResponsible)
+//{
+//
+//if (member.PartyRoleCode != "142")
+//{
+//var new1 = this.CurrentEmployeeResponsible.Create();
+//new1.EmployeeUUID = member.EmployeeUUID;
+//new1.PartyRoleCode = member.PartyRoleCode;
+//}
+//
+//
+//}
+//
+//}
+//}
+//
+//}
+//}
+	

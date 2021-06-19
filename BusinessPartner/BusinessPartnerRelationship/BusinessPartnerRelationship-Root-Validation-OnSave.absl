@@ -1,0 +1,64 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: BusinessPartnerRelationship
+		Node: Root
+		Validation: OnSave 
+
+		Script file signature
+		----------------------------
+		Returns: Boolean
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script before an instance of the business object is saved to the data base.
+		It can have a return value of either true or false, which determines whether the instance of the business object is saved or not.
+		All fields in this business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.PC.IdentityManagement.Global;
+
+
+
+var errorCount = 0;
+if (this.ContactPerson.IsSet())
+{
+	if (this.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+	{
+		if (this.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+		{
+			if (this.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.DefaultEMail.IsSet())
+			{
+				//Query contacts from BusinessPartners
+				var contact = BusinessPartner.Retrieve(this.SecondBusinessPartner.UUID);
+
+				var emailId = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.DefaultEMail.URI.content;
+				var query = BusinessPartner.QueryByCommunicationData;
+				var selectionParams = query.CreateSelectionParams();
+				selectionParams.Add(query.BusinessCharacterCode.content, "I", "EQ", "BUP001");
+				var resultData = query.ExecuteDataOnly(selectionParams);
+				selectionParams.Clear();
+				// 2. Selection
+
+				selectionParams.Add(query.EMailURI.content, "I", "EQ", emailId);
+				// Result
+				resultData = query.ExecuteDataOnly(selectionParams);
+				resultData = resultData.Where(k => k.CategoryCode == "1");
+
+				if (resultData.Count() > 0 && resultData.GetFirst().InternalID!=contact.InternalID)
+				{  
+					errorCount = errorCount + 1;
+					raise DuplicateBP.Create("E", ": Please use different Contact Email ID");
+					return false;
+				}
+
+			}
+		}
+	}
+}
+
+
+return true;

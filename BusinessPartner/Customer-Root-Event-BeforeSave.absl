@@ -1,0 +1,774 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Customer
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.PDI.bo;
+import AP.PDI.Utilities;
+import AP.PC.IdentityManagement.Global;
+import AP.CRM.Global;
+
+
+
+
+
+var common = this.Common;
+var currEmpResponsible = this.CurrentEmployeeResponsible;
+var bupaUiTransform = this.BupaUiTransformation;
+var vAccid = this.InternalID;
+
+//Assign Parent account
+
+var userID;
+var identityUUID = Context.GetCurrentIdentityUUID();
+
+var identity = Identity.Retrieve(identityUUID);
+
+if (identity.IsSet())
+{
+
+	userID = identity.ID.content;
+
+}
+
+
+//ASSIGN PARENT ACCOUNT TO THE CURRENT ACCOUNT
+if (userID == "_CAMS_ODATA" || userID == "KUMARP")
+{
+	foreach (var inst in common)
+	{
+		if (!inst.ZParentAcct.IsInitial())
+		{
+			//var parent = this.Common.GetFirst().ZParentAcct.RemoveLeadingZeros();
+
+			var query = Customer.QueryByBusinessObjectCustomer;
+			var selectionParams = query.CreateSelectionParams();
+			//selectionParams.Add(query.CategoryCode, "I", "EQ","2");
+			//selectionParams.Add(query.LifeCycleStatusCode, "I", "LT","3");
+			selectionParams.Add(query.ZCustID_EA8AE8AUBVHCSXVYS0FJ1R3ON, "I", "EQ", inst.ZParentAcct.RemoveLeadingZeros());
+			// Result
+			var resultData = query.ExecuteDataOnly(selectionParams);
+			
+			bupaUiTransform.ParentAccount.ParentAccountUUID = resultData.GetFirst().UUID; 
+			common.GetFirst().ZPrtAcct = resultData.GetFirst().InternalID;
+			
+			var parentData = Customer.Retrieve(resultData.GetFirst().InternalID);
+			if (parentData.IsSet())
+			{
+				common.GetFirst().ZParentDesc = parentData.CurrentCommon.BusinessPartnerFormattedName;
+		
+			}
+	
+		}
+	
+	}
+}
+
+
+//IF CUSTOM PARENT ACCOUNT FIELD IS CHANGED THEN ASSIGN PARENT TO STANDARD FIELD TOO
+if (userID != "_CAMS_ODATA")
+{
+	
+	if (!common.GetFirst().ZPrtAcct.IsInitial())
+	{
+		var query = Customer.QueryByBusinessObjectCustomer;
+		var selectionParams = query.CreateSelectionParams();
+		//selectionParams.Add(query.CategoryCode, "I", "EQ","2");
+		//selectionParams.Add(query.LifeCycleStatusCode, "I", "LT","3");
+		selectionParams.Add(query.InternalID, "I", "EQ", common.GetFirst().ZPrtAcct.RemoveLeadingZeros());
+		// Result
+		var resultData = query.ExecuteDataOnly(selectionParams);
+		if (resultData.Count() > 0)
+		{
+			bupaUiTransform.ParentAccount.ParentAccountUUID = resultData.GetFirst().UUID; 
+		}
+	
+	}
+	else
+	{
+		
+		bupaUiTransform.ParentAccount.ParentAccountUUID.Clear();
+				
+	}
+
+}
+
+
+//ASSIGN TEAM FROM PARENT TO CURRENT ACCOUNT if toplevel account is strategic
+if (bupaUiTransform.IsSet() && bupaUiTransform.ParentAccount.IsSet())
+{
+	var parentUUID = bupaUiTransform.ParentAccount.ParentAccountUUID;
+	var toplvlUUID = bupaUiTransform.ParentAccount.TopLevelAccountUUID;
+
+	if (!toplvlUUID.IsInitial())
+	{		
+		var toplvlAcc = Customer.Retrieve(toplvlUUID);
+		var toplvlComm = toplvlAcc.Common.GetFirst();
+		if (toplvlComm.IsSet())
+		{
+			if (toplvlComm.ZStrategic == true)
+			{
+
+				if (!parentUUID.IsInitial())
+				{	
+					var parent = Customer.Retrieve(parentUUID);	  
+					//var members = parent.CurrentEmployeeResponsible.Count();
+					var parentCommon = parent.Common.GetFirst();
+					if (parentCommon.IsSet())
+					{			
+						//if (parentCommon.ZStrategic == true)
+						//{
+
+						var members = currEmpResponsible;
+						var isCopMem = members.Where(k => k.ZIsCopied == true);
+
+						if (isCopMem.Count() > 0)
+						{
+							foreach (var mem in isCopMem)
+							{
+								mem.Delete();
+				   
+							}
+						}
+				   
+
+						foreach (var parentMember in parent.CurrentEmployeeResponsible)
+						{
+							var vAdd = "YES";
+							if (parentMember.PartyRoleCode != "142")
+							{
+						
+								if (members.Count() > 0)
+								{
+									foreach (var mem in members)
+									{
+										//if((mem.GetFromDB().PartyRoleCode == parentMember.PartyRoleCode) && (mem.GetFromDB().EmployeeUUID.content == parentMember.EmployeeUUID.content))
+										//{
+										//vAdd = "NO";
+										//}
+										if ((mem.PartyRoleCode == parentMember.PartyRoleCode) && (mem.EmployeeUUID.content == parentMember.EmployeeUUID.content))
+										{
+											vAdd = "NO";
+										}
+							
+									}
+								}
+					
+
+								if (vAdd == "YES")
+								{
+									var new1 = this.CurrentEmployeeResponsible.Create();
+									new1.EmployeeUUID = parentMember.EmployeeUUID;
+									new1.PartyRoleCode = parentMember.PartyRoleCode;
+									new1.ZIsCopied = true;
+								}
+							}
+						
+						}
+
+
+						//}
+					}
+
+				}
+
+				
+				//********COPY ADDITIONAL TEAM MEMBER TO CHILD ACCOUNTS*************//
+
+				var query = BusinessPartnerHierarchy.Group.QueryByElements;
+
+				var params = query.CreateSelectionParams();
+
+				params.Add(query.BusinessPartnerInternalID, "I", "EQ", this.InternalID); 
+
+				var result = query.Execute(params);
+				if (result.Count() > 0)
+				{
+					var group = result.GetFirst();
+	
+					var childGroup = group.ChildGroup;					
+		
+					foreach (var child in childGroup.BusinessPartner)
+					{		   
+						var childDetails = Customer.Retrieve(child.BusinessPartnerUUID);
+
+						var childTeam = childDetails.CurrentEmployeeResponsible;
+						if (childTeam.Count() > 0)
+						{
+							foreach (var member in childTeam)
+							{
+								//FIRST DELETE THE COPIED MEMBERS OF CHILD
+								if (member.ZIsCopied == true)
+								{
+									member.Delete();		
+								}			
+						
+							}	
+						}
+
+						//ADD FROM PARENT			 
+			
+						foreach (var member in currEmpResponsible)
+						{
+				
+							var vAdd = "YES";
+							if (member.PartyRoleCode != "142")
+							{
+								if (childTeam.Count() > 0)
+								{
+									foreach (var childmember in childTeam)
+									{
+										//if((childmember.GetFromDB().PartyRoleCode == member.PartyRoleCode) && (childmember.GetFromDB().EmployeeUUID.content == member.EmployeeUUID.content))
+										//{
+										//vAdd = "NO";
+										//}
+										if ((childmember.PartyRoleCode == member.PartyRoleCode) && (childmember.EmployeeUUID.content == member.EmployeeUUID.content))
+										{
+											vAdd = "NO";
+										}
+									}
+								}
+				
+								if (vAdd == "YES")
+								{
+									var new1 : elementsof childDetails.CurrentEmployeeResponsible;					
+									new1.EmployeeUUID = member.EmployeeUUID;
+									new1.PartyRoleCode = member.PartyRoleCode;
+									new1.ZIsCopied = true;
+									childDetails.CurrentEmployeeResponsible.Create(new1);
+								}
+							}						
+				
+						
+						}
+			
+					}
+	
+				}
+
+			}
+			else
+			{
+
+				//************DELETE TEAM FROM CURRENT ACCOUNT ONCE PARENT is changed and toplevel account of it is not strategic************************
+				//check if parent account field has a null value
+				//if yes, then loop through the accoutn team for IsCopied members and delete them
+				var members = currEmpResponsible;
+				members = members.Where(k => k.ZIsCopied == true);
+
+				if (members.Count() > 0)
+				{
+					foreach (var mem in members)
+					{
+						mem.Delete();
+					}
+				}
+
+
+			}
+		}
+	}
+
+}
+
+
+else
+{ 
+	//************DELETE TEAM FROM CURRENT ACCOUNT ONCE PARENT REMOVED************************
+	//check if parent account field has a null value
+	//if yes, then loop through the accoutn team for IsCopied members and delete them
+	var members = currEmpResponsible;
+	members = members.Where(k => k.ZIsCopied == true);
+
+	if (members.Count() > 0)
+	{
+		foreach (var mem in members)
+		{
+			mem.Delete();
+				   
+		}
+	}
+	 
+}
+
+
+
+
+
+//if (this.ZC4CInternalID == "")
+//{
+//if (this.ToParent.BupaUiTransformation.IsSet())
+//{
+//var parentUUID = this.ToParent.BupaUiTransformation.ParentAccount.ParentAccountUUID;
+//
+//
+//
+//if (!parentUUID.IsInitial())
+//{
+//
+//var parent = Customer.Retrieve(parentUUID);	  
+////var members = parent.CurrentEmployeeResponsible.Count();
+//var parentCommon = parent.Common.GetFirst();
+//if (parentCommon.IsSet())
+//{			
+//if (parentCommon.ZStrategic == true)
+//{
+//foreach (var member in parent.CurrentEmployeeResponsible)
+//{
+//
+//if (member.PartyRoleCode != "142")
+//{
+//var new1 = this.ToParent.CurrentEmployeeResponsible.Create();
+//new1.EmployeeUUID = member.EmployeeUUID;
+//new1.PartyRoleCode = member.PartyRoleCode;
+//}
+//this.ZC4CInternalID = this.ToParent.InternalID;
+//
+//}
+//
+//}\
+//}
+//
+//}
+//
+//}
+//}
+
+
+//************DELETE TEAM FROM CHILD ACCOUNT********//
+//If Strategic indicator is turned off in the current account.
+//BP HIERARCHY
+
+if (common.GetFirst().GetFromDB().ZStrategic == true && common.GetFirst().ZStrategic == false)
+{
+	var query = BusinessPartnerHierarchy.Group.QueryByElements;
+
+	var params = query.CreateSelectionParams();
+
+	params.Add(query.BusinessPartnerInternalID, "I", "EQ", this.InternalID); // Here 1000620 is Parent Partner
+
+	var result = query.Execute(params);
+	if (result.Count() > 0)
+	{
+		var group = result.GetFirst();
+	
+		var childGroup = group.ChildGroup;
+
+		
+		foreach (var child in childGroup.BusinessPartner)
+		{
+		   
+			var childDetails = Customer.Retrieve(child.BusinessPartnerUUID);
+
+			var childTeam = childDetails.CurrentEmployeeResponsible;
+
+			foreach (var member in childTeam)
+			{
+				if (member.ZIsCopied == true)
+				{
+					member.Delete();
+		
+				}
+	   
+			}
+	
+		}
+	
+	}
+}
+
+
+
+////********COPY ADDITIONAL TEAM MEMBER TO CHILD ACCOUNTS*************//
+//if (common.GetFirst().ZStrategic == true)
+//{
+//
+//var query = BusinessPartnerHierarchy.Group.QueryByElements;
+//
+//var params = query.CreateSelectionParams();
+//
+//params.Add(query.BusinessPartnerInternalID, "I", "EQ", this.InternalID); 
+//
+//var result = query.Execute(params);
+//if (result.Count() > 0)
+//{
+//var group = result.GetFirst();
+//
+//var childGroup = group.ChildGroup;
+//
+//
+//foreach (var child in childGroup.BusinessPartner)
+//{		   
+//var childDetails = Customer.Retrieve(child.BusinessPartnerUUID);
+//
+//var childTeam = childDetails.CurrentEmployeeResponsible;
+//if (childTeam.Count() > 0)
+//{
+//foreach (var member in childTeam)
+//{
+////FIRST DELETE THE COPIED MEMBERS OF CHILD
+//if (member.ZIsCopied == true)
+//{
+//member.Delete();		
+//}			
+//
+//}	
+//}
+//
+////ADD FROM PARENT			 
+//
+//foreach (var member in currEmpResponsible)
+//{
+//
+//var vAdd = "YES" ;
+//if (member.PartyRoleCode != "142")
+//{
+//if (childTeam.Count() > 0)
+//{
+//foreach (var childmember in childTeam)
+//{
+////if((childmember.GetFromDB().PartyRoleCode == member.PartyRoleCode) && (childmember.GetFromDB().EmployeeUUID.content == member.EmployeeUUID.content))
+////{
+////vAdd = "NO";
+////}
+//if((childmember.PartyRoleCode == member.PartyRoleCode) && (childmember.EmployeeUUID.content == member.EmployeeUUID.content))
+//{
+//vAdd = "NO";
+//}
+//}
+//}
+//
+//if (vAdd == "YES" )
+//{
+//var new1: elementsof childDetails.CurrentEmployeeResponsible;					
+//new1.EmployeeUUID = member.EmployeeUUID;
+//new1.PartyRoleCode = member.PartyRoleCode;
+//new1.ZIsCopied = true;
+//childDetails.CurrentEmployeeResponsible.Create(new1);
+//}
+//}						
+//
+//
+//}
+//
+//
+//}
+//
+//}
+//
+//}
+
+
+
+
+//ZCRM00 - IF NON-INVOICING ACCOUNT GENERATE GLOBAL ACCOUNT ID
+if (this.CustomerRole.IsSet())
+{
+	if (this.CustomerRole.RoleCode.content == "ZCRM00")
+	{
+		if (this.Common.GetFirst().ZGAN.IsInitial())
+		{
+			//GENERATE GLOBAL ACCOUNT NUMBER FROM MOHAWK
+			var scenarioName = "GlobalAccountNumber";
+			var serviceName = "GlobAcctNoGenerate";
+			var httpMethod = "POST";
+			var c4cInternalID = this.InternalID;
+	
+			var httpResource = "";
+			var body = "{" +
+			  "\"buId\"" + ":" + "\"1\"" + "," +
+			  "\"erpId\"" + ":" + "\"1\"" + "," +
+			  "\"erpKey\"" + ":" + "\"" + c4cInternalID + "\"" + "," +
+			  "\"objectType\"" + ":" + "\"SFDC_ACCOUNT\"" + 
+			 "}";
+
+			//var body = "{\"buID\":\"1\",\"erpID\":\"1\",\"erpKey\":\"2142\",\"objectType\":\"SFDC_ACCOUNT\"}";
+
+			var contentType = "application/json";
+			var headerParameter : collectionof NameAndValue;
+			var urlParam : collectionof NameAndValue;
+			var urlParametrEntry : NameAndValue;
+			var headerParameterEntry : NameAndValue;
+
+	
+			headerParameterEntry.Name = "Authorization";
+			headerParameterEntry.Value = "Basic ZU1wb3dlcl9oeWJyaXM6R3IzQHRKbzgh";
+			headerParameter.Add(headerParameterEntry);
+
+	
+			//urlParametrEntry.Name = "access_token";
+			//urlParametrEntry.Value = "";
+			//urlParam.Add(urlParametrEntry);
+
+			var ws_result = WebServiceUtilities.ExecuteRESTService(scenarioName, serviceName, httpMethod, httpResource, urlParam, headerParameter, contentType, body);
+
+
+			var keys : collectionof String;
+			var key;
+			key = "get".ToLowerCase() + "U".ToUpperCase() + "nique".ToLowerCase() + "ID".ToUpperCase() + "R".ToUpperCase() + "esult".ToLowerCase();
+			keys.Add(key);
+			var jsonString = ws_result.Content;
+			//var result1 = ws_result.ContentType;
+			var Result : JsonResult;
+			
+			var result2 = ws_result.Code;
+
+			if (Json.IsValidJson(jsonString))
+			{
+				Result = Json.ParseKeyValues(keys, jsonString);
+				
+			}
+
+			if (!Result.KeyValue.GetFirst().Error)
+			{
+
+				this.Common.GetFirst().ZGAN = Result.KeyValue.GetFirst().Value;
+		
+				//var gidColl = this.Identification.Where(k => k.PartyIdentifierTypeCode.content == "Z001");
+				//if (gidColl.Count() == 0)
+				//{
+				//var idNumber = this.Identification.Create();
+				//idNumber.PartyIdentifierTypeCode.content = "Z001";			
+				//idNumber.BusinessPartnerID = Result.KeyValue.GetFirst().Value;
+				//
+				//
+				//}
+			}
+		}
+	}
+
+	
+	//*******END - GENERATE GLOBAL ACCOUNT NUMBER FROM MOHAWK***************//
+
+
+	//****SYNC NON-INVOICING ACCOUNTS WITH HYBRIS****//
+	var req : AccountToHybris.Account_C4C.Request;
+	var address;
+	var addRep;
+	if (this.CurrentCommon.IsSet())
+	{
+		req.Name = this.CurrentCommon.BusinessPartnerFormattedName;
+	}
+	req.Status = this.Status.LifeCycleStatusCode;
+	if (this.CurrentDefaultAddressInformation.IsSet())
+	{
+		address = this.CurrentDefaultAddressInformation.Address;
+	}
+	
+	if (address.IsSet())
+	{
+		if (address.DefaultPostalAddressRepresentation.IsSet())
+		{
+			addRep = address.DefaultPostalAddressRepresentation; 
+	
+
+			if (this.CurrentDefaultAddressInformation.IsSet())
+			{
+				if (!addRep.CityName.IsInitial())
+				{
+					req.City = addRep.CityName; 
+				}
+				if (!addRep.RegionCode.IsInitial())
+				{
+					req.State = addRep.RegionCode.content; 
+				}
+				if (!addRep.CountryCode.IsInitial())
+				{
+					req.Country = addRep.CountryCode; 
+				}
+				if (!addRep.DistrictName.IsInitial())
+				{
+					req.District = addRep.DistrictName; 
+				}
+				if (!addRep.StreetPostalCode.IsInitial())
+				{
+					req.PostalCode = addRep.StreetPostalCode; 
+				}
+				if (address.DefaultWeb.IsSet())
+				{
+					req.Website = address.DefaultWeb.URI; 
+				}
+				if (!addRep.StreetName.IsInitial())
+				{
+					req.Street = addRep.StreetName; 
+				}
+				if (address.DefaultConventionalPhone.IsSet())
+				{
+					req.WorkPhone = address.DefaultConventionalPhone.FormattedNumberDescription; 
+				}
+			}
+		}
+	}
+	req.CustomerType = this.CustomerRole.RoleCode.content;
+	if (this.Common.GetFirst().IsSet())
+	{
+		if (!this.Common.GetFirst().ZGAN.IsInitial())
+		{
+			req.GlobalAccountNumber = this.Common.GetFirst().ZGAN; 
+		}
+		//req.MarketSegment = this.Common.GetFirst().ZSegment;
+		if (!this.Common.GetFirst().ZSAN.IsInitial())
+		{
+			req.StrategicAccountNumber = this.Common.GetFirst().ZSAN; 
+		}
+		req.StrategicCheckbox = this.Common.GetFirst().ZStrategic.ToString();
+	}
+
+	//var response = Library::Contact.Contact_C4C(req, " ", "Contact_CPI_Out");
+	var response = Library::AccountToHybris.Account_C4C(req, " ", "SyncNonInvAcct_Hybris");
+
+}
+
+
+
+//var freightInfo : elementsof PaymentFreight;
+//freightInfo.ProductTypeFreight = "Carpet Tile";
+//freightInfo.DeliveryRate.content = 450;
+//freightInfo.DeliveryRate.currencyCode = "USD";
+//freightInfo.DeliveryMinimum.content = 220;
+//freightInfo.DeliveryMinimum.currencyCode = "USD";
+//freightInfo.PickupRate.content = 389;
+//freightInfo.PickupRate.currencyCode = "USD";
+//var rootInstance = PaymentFreight.Create(freightInfo);
+
+
+//var prodAcc: elementsof ProdHierarchy;
+//prodAcc.ParentExtID.content = "EXTID10000040";
+//var prodRootInstance = ProdHierarchy.Create(prodAcc);
+//
+//var prodAccItm: elementsof ProdHierarchy.item;
+//prodAccItm.LinkID = "101";
+//prodAccItm.ParentItemExternalID.content = "EXTID10000040";
+//prodAccItm.isActive = true;
+//prodAccItm.AccessoryExternalID.content = "EXTID10000010";
+//
+//var prodItmInst = prodRootInstance.item.Create(prodAccItm);
+
+
+
+
+//var taskItemInstance;
+//var rootInstance = TaskItem.Create();
+
+//task.TaskID.content = this.ID;
+
+
+////Code to fetch Opportunities assigned to an Account.
+//var accID = this.InternalIDNoAlphaConversion;
+//var query = Opportunity.QueryByElements;
+//var resultData; 
+//var selectionParams = query.CreateSelectionParams();
+////selectionParams.Add(query.PartyRoleCode, "I", "EQ", "1001");
+//selectionParams.Add(query.PartyPartyKey.PartyID.content, "I", "EQ", accID);
+//resultData = query.ExecuteDataOnly(selectionParams);
+//
+//
+////Updating Opportunity if any account team/ territory team are updated.
+//
+//foreach (var opp in resultData)
+//{
+//var oppDetails;
+//var oppID = opp.ID.content.RemoveLeadingZeros();
+//var oppQuery = Opportunity.QueryByElements;
+//var oppRD; 
+//var oppselParms = oppQuery.CreateSelectionParams();
+//oppselParms.Add(oppQuery.ID.content, "I", "EQ", oppID);	
+//oppRD = oppQuery.Execute(oppselParms);
+//
+////oppRD.
+//if(oppRD.Count()>0 && oppRD.GetFirst().IsSet())
+//{
+//oppDetails = oppRD.GetFirst();	
+////oppDetails.u
+//
+//}
+//////DELETE COPIED MEMBERS
+////
+//////foreach (var member in oppDetails.Party)
+//////{  
+//////if (member.ZIsCopiedMember == true)
+//////{  
+//////member.Delete();  
+//////}
+//////
+//////}
+////
+//if (this.Common.GetFirst().ZStrategic == true)
+//{
+//var acctTeam = this.CurrentEmployeeResponsible;
+//foreach (var emp in acctTeam)
+//{
+//if (emp.IsSet())
+//{
+//if (emp.PartyRoleCode == "Z056" || emp.PartyRoleCode == "Z014" || emp.PartyRoleCode == "Z018" || emp.PartyRoleCode == "Z012" || emp.PartyRoleCode == "Z019" || emp.PartyRoleCode == "Z000")
+//{
+////if(oppDetails.SalesTeamParty.)
+//var eleOppParty: elementsof Opportunity.Party.PartyContactParty;						
+//
+////eleOppParty.
+//
+//var elOppSalesTeam = oppDetails.SalesTeamParty;
+//
+//elOppSalesTeam.Add
+////	oppDetails.Party. = team.PartyRole;		
+//
+//var empInfo = BusinessPartner.Retrieve(team.EmployeeUUID);
+//elOppSalesTeam.PartyKey.PartyID.content = empInfo.InternalID.RemoveLeadingZeros();
+//elOppSalesTeam.ZIsCopiedMember = true;
+//
+////var elOppParty = oppDetails.SalesTeamParty.;
+//
+////elOppParty.Add(1);
+////elOppParty.RoleCode = emp.PartyRoleCode;		
+////
+////var empInfo = BusinessPartner.Retrieve(emp.EmployeeUUID);
+////elOppParty.PartyKey.PartyID.content = empInfo.InternalID.RemoveLeadingZeros();
+////elOppParty.ZIsCopiedMember = true;
+//}
+//}
+//
+//}
+//}
+	
+//	}
+
+//}
+
+
+/**********QUERY CUSTOM BO WITH ACCOUNT ID****************/
+
+//var query = PaymentFreight.QueryByElements;
+//var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.AccountID, "I", "EQ", this.InternalID);
+//// Result
+//resultData = query.ExecuteDataOnly(selectionParams);
+//foreach (var i in resultData)
+//{
+////GET DATA FROM BO INSTANCE AND ASSIGN IT TO this INSTANCE
+////We can use Customer ext fields too and use in EC binding from association
+//this.Common.GetFirst().ZGAN = i.CARPETDLVDAYS;
+//this.Common.GetFirst().ZSAN = i.PRIMEWHSE;
+//
+//}
+//var query1 = PaymentFreight.QueryByElements;
+//
+//var resultData1 = query1.Execute();
+//
+//foreach (var ele in resultData1)
+//{
+//ele.Delete();
+//}
+//

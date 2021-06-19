@@ -1,0 +1,127 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: BusinessPartnerRelationship
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.PC.IdentityManagement.Global;
+
+
+var userid = "";
+var identityUUID = Context.GetCurrentIdentityUUID();
+var identity = Identity.Retrieve(identityUUID);
+if (identity.IsSet())
+{
+	userid = identity.ID.content;
+}
+
+
+//TO NOT TRIGGER BACK AN UPDATE BACK TO HYBRIS PUT A CHECK
+if (userid != "_CAMS_ODATA" && userid != "_CPI")
+{
+	var req : Library::Contact.Contact_C4C.Request;
+
+
+	var contact = this.SecondBusinessPartner;
+
+	if (contact.IsSet() && !contact.GetFromDB().InternalID.IsInitial())
+	{	
+		if (contact.Status.LifeCycleStatusCode == "2" || contact.Status.LifeCycleStatusCode == "3" || contact.Status.LifeCycleStatusCode == "4")
+		{
+
+			if (contact.Relationship.Count() > 0)
+			{
+				foreach (var rel in contact.Relationship)
+				{  
+					if (rel.RoleCode.content == "BUR001-2")
+					{
+						var bpID = rel.RelationshipBusinessPartnerInternalID;
+
+						var custDetails = Customer.Retrieve(bpID);				
+						var gid = custDetails.Common.GetFirst().ZGAN;
+						if (!gid.IsInitial())
+						{				
+							req.AccountID.Add(gid);
+						}
+		
+					}
+				}
+
+			}
+   
+			if (req.AccountID.Count() > 0)
+			{
+				req.FirstName = contact.CurrentCommon.Person.Name.GivenName;
+				req.LastName = contact.CurrentCommon.Person.Name.FamilyName;
+				//req.MiddleName = this.CurrentCommon.Person.Name.MiddleName;
+				req.Birthdate = contact.CurrentCommon.Person.BirthDate.ToString();
+				req.ContactID = contact.InternalID;
+				//req.CreatedBy = this.CreationIdentity.FormattedName;
+
+		
+		
+				if (contact.CurrentDefaultIsContactPersonFor.IsSet())
+				{
+					if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.IsSet())
+					{
+						if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+						{
+							if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+							{
+								if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+								{
+									var workAdd = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress;
+									if (workAdd.DefaultEMail.IsSet())
+									{
+									    workAdd.DefaultEMail.URI.content = workAdd.DefaultEMail.URI.content.ToLowerCase();
+										contact.Common.GetFirst().ZContactEmail.content = workAdd.DefaultEMail.URI.content;
+										req.Email = workAdd.DefaultEMail.URI.content;
+									}
+									if (workAdd.DefaultFacsimile.IsSet())
+									{
+										req.Fax = workAdd.DefaultFacsimile.FormattedNumberDescription; 
+									}
+					
+									//
+									if (workAdd.DefaultMobilePhone.IsSet())
+									{
+										req.Mobile = workAdd.DefaultMobilePhone.FormattedNumberDescription; 
+									}
+									//
+									if (workAdd.DefaultConventionalPhone.IsSet())
+									{
+										req.WorkPhone = workAdd.DefaultConventionalPhone.FormattedNumberDescription; 
+									}
+									req.Status = contact.Status.LifeCycleStatusCode;
+									if (workAdd.DefaultWorkplaceRepresentation.IsSet())
+									{
+										req.JobTitle = workAdd.DefaultWorkplaceRepresentation.FunctionalTitleName; 
+									}
+
+								}
+								req.Salutation = contact.CurrentCommon.Person.Name.FormOfAddressCode.content;
+								//req.Salutation = this.CurrentCommon.Person.Name.AcademicTitleCode.content;
+								req.PrimaryRole = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.BusinessPartnerFunctionTypeCode.content;
+
+								//
+								var response = Library::Contact.Contact_C4C(req, " ", "Contact_CPI_Out");
+						
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}

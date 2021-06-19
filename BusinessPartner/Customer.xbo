@@ -1,0 +1,46 @@
+﻿import AP.Common.GDT;
+import AP.FO.BusinessPartner.Global;
+
+[Extension] businessobject AP.FO.BusinessPartner.Global:Customer {
+ 
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+				    
+   		node AddressInformation {
+   	    } 
+    
+   		node Common {
+		[Scenario(CustomerProcessExtensionScenario)][Label("Global Account Number")]element ZGAN:ShortText;
+		[Scenario(CustomerProcessExtensionScenario)][Label("Strategic Account Number")]element ZSAN:ShortText;
+		[Scenario(CustomerProcessExtensionScenario)][Label("Account Number")]element ZCustID:ID;
+		[Scenario(CustomerProcessExtensionScenario)][Label("Obsolete Global Account Number")]element ZExtID:ID;
+		[Scenario(CustomerProcessExtensionScenario)][Label("Obsolete Strategic Account Number")]element ZC4CInternalID:ID;
+		[Scenario(CustomerProcessExtensionScenario)][Label("Parent Account ExternalID")]element ZParentAcct:ID;
+		[Scenario(CustomerProcessExtensionScenario)][Label("Obsolete Parent Account")]element ZParentAccount:ID;
+				
+		element ZParentDesc:LongText;
+		element ZIsProdTenant:Indicator;
+		element ZIsDevTenant:Indicator;
+		element ZIsUATTenant:Indicator;
+		[Label("Parent Account")]element ZPrtAcct:BusinessPartnerInternalID;
+
+		
+		
+		
+		element ZEbody:LongText;
+		
+
+		
+		
+   	    } 
+    
+   		node Identification {
+   	    } 
+    
+   		node CurrentEmployeeResponsible {
+		 
+   	    } 
+		
+     
+  
+}

@@ -1,0 +1,72 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: BusinessPartner
+		Node: Common
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+import AP.Common.Global;
+import AP.Common.GDT;
+import AP.FO.ProductDataMaintenance.Global;
+
+
+//this.ZBody = "Hello World!";
+//if (!this.ToParent.TextCollection.IsSet())
+//{
+//var n = this.ToParent.TextCollection.Create();
+//if ( n.IsSet())
+//{
+//if (!n.Text.GetFirst().IsSet())
+//{   
+//n.TextByTextTypeCodeAndLanguageCode.GetFirst().TypeCode.content = "10030";
+//n.Text.Create().TextContent.Create().Text.content = this.ZBody; 
+//}
+//}
+//
+//var user = n.Text.CreationIdentity.GetFirst().UUID;
+//var name = n.Text.CreationIdentity.GetFirst().FormattedName;
+//var us = n.Text.CreationIdentity.GetFirst().ValidityPeriod;
+//
+//}
+
+//var pd = Material.Retrieve();
+
+//var emailId;
+//
+//if (this.ToRoot.CurrentDefaultIsContactPersonFor.IsSet())
+//{ 
+	//if (this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+	//{
+		//if (this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+		//{	    
+			//if (!this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.DefaultEMail.URI.IsInitial())
+			//{
+				//emailId = this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.DefaultEMail.URI.content;
+			//
+			//}
+	    	//
+		//}
+  //
+	//}
+//
+//}
+////var emailId = this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.DefaultEMail.URI.content;
+//var query = BusinessPartner.QueryByCommunicationData;
+//var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.EMailURI.content, "I", "EQ", emailId);
+//// Result
+//resultData = query.ExecuteDataOnly(selectionParams);
+//
+//
+

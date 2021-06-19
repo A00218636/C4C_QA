@@ -1,0 +1,59 @@
+/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: BusinessPartner
+		Node: Common
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+
+//CANNOT USE SINCE CUSTOM FIELD IS NOT DIRECTLY TRIGGERED
+//LOWERCASE EMAIL & ASSIGN TO CUSTOM EMAIL
+//if (this.ToRoot.CurrentDefaultIsContactPersonFor.IsSet())
+	//{
+		//if (this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.IsSet())
+		//{
+			//if (this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+			//{
+				//if (this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+				//{
+					//if (this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+					//{
+						//var workAdd = this.ToRoot.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress;
+						//
+						//if (workAdd.DefaultEMail.IsSet())
+						//{
+							//workAdd.DefaultEMail.URI.content = workAdd.DefaultEMail.URI.content.ToLowerCase();
+							//this.ZContactEmail.content = workAdd.DefaultEMail.URI.content;
+						//}
+					//}
+				//}
+			//}
+		//}
+	//}
+
+import AP.PC.IdentityManagement.Global;
+
+
+
+if (Context.IsProductionTenant())
+{
+	this.ZIsProdTenant = true;
+}
+else
+{ 
+	this.ZIsProdTenant = false;
+	if (Context.GetSystemURL().Contains("351008"))
+	{
+		this.ZIsDevTenant = "X"; 
+	}
+	else { this.ZIsUATTenant = "X"; }
+}

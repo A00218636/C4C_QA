@@ -1,0 +1,82 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Customer
+		Node: Common
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.PC.IdentityManagement.Global;
+
+
+
+if (Context.IsProductionTenant())
+{
+	this.ZIsProdTenant = true;
+}
+else
+{ 
+	this.ZIsProdTenant = false;
+	if (Context.GetSystemURL().Contains("351008"))
+	{
+		this.ZIsDevTenant = "X"; 
+	}
+	else { this.ZIsUATTenant = "X"; }
+}
+
+
+//APPEND ZEROES IN GAN FROM CAMS
+
+//if (this.ZGAN.Length() < 10)
+//{
+//this.ZGAN = this.ZGAN;
+//var len = this.ZGAN.Length();
+//
+//var leadingZeroesToBeAdded = 10 - len;
+//
+//while (len < 10)
+//{
+//this.ZGAN = "0" + this.ZGAN;
+//len = len+1;
+//} 
+//var gan = this.ZGAN;
+//}
+//Assign Parent account
+var userID;
+var identityUUID = Context.GetCurrentIdentityUUID();
+
+var identity = Identity.Retrieve(identityUUID);
+
+if (identity.IsSet())
+{
+
+	userID = identity.ID.content;
+
+}
+
+if (userID == "_CAMS_ODATA" || userID == "KUMARP")
+{
+	if (!this.ZParentAcct.IsInitial())
+	{
+		var query = Customer.QueryByBusinessObjectCustomer;
+		var selectionParams = query.CreateSelectionParams();
+		//selectionParams.Add(query.CategoryCode, "I", "EQ","2");
+		//selectionParams.Add(query.LifeCycleStatusCode, "I", "LT","3");
+		selectionParams.Add(query.ZCustID_EA8AE8AUBVHCSXVYS0FJ1R3ON, "I", "EQ", this.ZParentAcct.RemoveLeadingZeros());
+		// Result
+		var resultData = query.ExecuteDataOnly(selectionParams);
+
+		this.ToRoot.BupaUiTransformation.ParentAccount.ParentAccountUUID = resultData.GetFirst().UUID;
+		this.ZPrtAcct = resultData.GetFirst().InternalID;
+	}
+}
+
+	

@@ -1,0 +1,73 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: BusinessPartner
+		Node: Root
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+//import AP.PC.IdentityManagement.Global;
+import AP.Common.Global;
+import AP.Common.GDT;
+
+
+
+var t = 10;
+//this.CurrentDefaultAddressInformation.AddressSnapshot.DefaultEMail.URI.content = "prateek4506@gmail.com";
+
+//this.Common.GetFirst().ZEbody = this.CurrentDefaultAddressInformation.AddressSnapshot.DefaultEMail.URI.content;
+//+"?Subject=you can enlist the support of American Express MEETINGS EXPERT Professionals to find venues, negotiate rates and review hotel contracts.</p><p>This solution is available free of charge, but qualifying meetings require";
+//var count  = this.Common.Count();
+//foreach(var u in this.Common)
+//{
+ //
+ //u.ZEbody = this.CurrentDefaultAddressInformation.AddressSnapshot.DefaultEMail.URI.content;
+ //var t = u.ZEbody;
+//
+//
+//}
+
+//var t = this.Common.GetFirst().ZBody;
+//foreach(var e in this.Common)
+//{
+ //e.ZBody = "Hello World!";
+//
+//}
+//this.Common.GetFirst().ZBody = "Hello World!";
+//if (!this.TextCollection.IsSet())
+//{
+//var n = this.TextCollection.Create();
+//if ( n.IsSet())
+	//{
+		//if (!n.Text.GetFirst().IsSet())
+		//{   
+		    //var g = n.Text.Create();
+			//g.TypeCode.content = "10030";
+			//var y = g.TextContent.Create();
+			//g.TypeCode.content = "10030";
+			//y.Text.content = "Hello World!";
+		//
+		    //foreach(var t in n.Text)
+			//{
+			 //t.TypeCode.content = "10030";
+			//
+			//}
+		////	n.TextByTextTypeCodeAndLanguageCode.GetFirst().TypeCode.content = "10030"; 
+		//}
+	//}
+//
+//var user = n.Text.CreationIdentity.GetFirst().UUID;
+//var name = n.Text.CreationIdentity.GetFirst().FormattedName;
+//var us = n.Text.CreationIdentity.GetFirst().ValidityPeriod;
+//
+//}
+//
+//

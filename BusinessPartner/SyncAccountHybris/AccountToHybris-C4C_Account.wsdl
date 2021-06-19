@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://C4C_Account" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"  name="C4C_Account"  targetNamespace="http://C4C_Account">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://C4C_Account">
+         <xsd:element name="Account">
+		  <xsd:complexType>
+            <xsd:sequence>
+               <xsd:element minOccurs="0" name="Name" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="CustomerType" type="xsd:string"/>
+			   <xsd:element minOccurs="0" name="MarketSegment" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="StrategicCheckbox" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="Street" type="xsd:string"/>
+			   <xsd:element minOccurs="0" name="City" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="District" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="State" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="Country " type="xsd:string"/>
+               <xsd:element minOccurs="0" name="PostalCode" type="xsd:string"/>
+			   <xsd:element minOccurs="0" name="WorkPhone" type="xsd:string"/>
+			   <xsd:element minOccurs="0" name="Website" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="Status" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="StrategicAccountNumber" type="xsd:string"/>
+               <xsd:element minOccurs="0" name="GlobalAccountNumber" type="xsd:string"/>
+            </xsd:sequence>
+         </xsd:complexType>
+		</xsd:element>
+      <xsd:element name="WriteAccountObjectInstanceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="AccountInformationResponse" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+	  </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="AccountCreate">
+    <wsdl:part element="tns:Account" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="AccountInstancesResponse">
+    <wsdl:part element="tns:WriteAccountObjectInstanceResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:portType name="C4C_Account">
+    <wsdl:operation name="Account_C4C">
+      <wsdl:input message="tns:AccountCreate"/>
+	  <wsdl:output message="tns:AccountInstancesResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="SI_C4C_AccountBinding" type="tns:C4C_Account">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="Account_C4C">
+      <soap:operation soapAction="http://C4C_Account/Account_C4C"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+	  <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="C4C_Account">
+    <wsdl:port name="SI_C4C_AccountBinding" binding="tns:SI_C4C_AccountBinding">
+      <soap:address location="https://mohawk.it-cpi013-rt.cfapps.us21.hana.ondemand.com/cxf/Account"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

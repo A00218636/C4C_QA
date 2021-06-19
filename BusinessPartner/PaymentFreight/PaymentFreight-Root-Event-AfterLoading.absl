@@ -1,0 +1,92 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: PaymentFreight
+		Node: Root
+		Event: AfterLoading 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being loaded.
+		- all the fields of business object are read-only and cannot be changed.
+*/
+
+import AP.PDI.bo;
+import ABSL;
+import AP.PDI.Utilities;
+import AP.PC.IdentityManagement.Global;
+import AP.CRM.Global;
+import AP.FO.BusinessPartner.Global;
+
+
+
+var customer = Customer.Retrieve(this.AccountID);
+
+if(customer.IsSet())
+{
+  this.ToCustomer = customer;
+
+}
+
+//this.DATETIME = "Awesome!";
+//this.DeliveryRate.content = 56;
+//this.DeliveryRate.currencyCode = "USD";
+
+//
+//var scenarioName = "FreightInfoCS";
+//var serviceName = "FreightInfo";
+//var httpMethod = "POST";
+//
+////Retrieve GAN
+//var cust = Customer.Retrieve(this.AccountID);
+//
+////var gan = cust.Common.GetFirst().ZGAN;
+//var gan = "0001267929";
+//
+////{"buId":"1","erpId":"1","globalAccountNumber":"'+globalAccountNumber+'"}
+	//
+//var httpResource = "";
+//var body = "{" +
+  //"\"buId\"" + ":" + "\"1\"" + "," +
+  //"\"erpId\"" + ":" + "\"1\"" + "," +
+  //"\"globalAccountNumber\"" + ":" + "\"" + gan + "\"" + 
+ //"}";
+//
+		//
+//var contentType = "application/json";
+//var headerParameter : collectionof NameAndValue;
+//var urlParam : collectionof NameAndValue;
+//var urlParametrEntry : NameAndValue;
+//var headerParameterEntry : NameAndValue;
+//
+	//
+//headerParameterEntry.Name = "Authorization";
+//headerParameterEntry.Value = "Basic ZU1wb3dlcl9oeWJyaXM6R3IzQHRKbzgh";
+//headerParameter.Add(headerParameterEntry);
+//
+//var ws_result = WebServiceUtilities.ExecuteRESTService(scenarioName, serviceName, httpMethod, httpResource, urlParam, headerParameter, contentType, body);
+//
+//
+//var keys : collectionof String;
+//var key;
+//key = "CATEGORY";
+//keys.Add(key);
+//var jsonString = ws_result.Content;
+////var result1 = ws_result.ContentType;
+//var Result : JsonResult;
+	//
+//var result2 = ws_result.Code;
+//
+//if (Json.IsValidJson(jsonString))
+//{
+	//Result = Json.ParseKeyValues(keys, jsonString);
+//}
+//
+//if (!Result.KeyValue.GetFirst().Error)
+//{
+//
+	//var category = Result.KeyValue.GetFirst().Value;
+//}
+//

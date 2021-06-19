@@ -1,0 +1,67 @@
+﻿import AP.Common.GDT as apCommonGDT;
+import  AP.FO.BusinessPartner.Global;
+//import BASIS.Global as basisGlobal;
+
+businessobject PaymentFreight{
+
+        // Root node must not be specified, it is created implicitly
+        //
+        // Add elements here. 
+        // 
+        // To declare an element as alternative key, use the [AlternativeKey] annotation.
+        // Please note:
+        // - An alternative key of type UUID exists implicitly for each node, enabling the node
+        //   to be used as an association target.
+        // - The QueryByElements query is created automatically for each node.
+        // - Code completion is available with CTRL + SPACE.
+		//message Success text " &1 data retrieved successfully.":LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element AccountID:BusinessPartnerInternalID;
+		element GlobalAccNumber:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element IsHeaderElement:Indicator;
+
+		
+		//*************FREIGHT INFORMATION*************************************
+		[Label("Primary Shipping Warehouse")]element PRIMEWHSE:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Delivery Days (Soft Surface)")]element CARPETDLVDAYS:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Delivery Days (Hard Surface)")]element PALLETDLVDAYS:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Fuel Surcharge")]element FUELSCHGPCT:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Date/Time")]element DATETIME:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Category")]element Category:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Product Type")]element ProductTypeFreight:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Pickup Rate")]element PickupRate:apCommonGDT:Amount;
+		[Label("Pickup Minimum")]element PickupMinimum:apCommonGDT:Amount;
+		[Label("Delivery Rate")]element DeliveryRate:apCommonGDT:Amount;
+		[Label("Delivery Minimum")]element DeliveryMinimum:apCommonGDT:Amount;
+		element DataLoaded:LANGUAGEINDEPENDENT_EXTENDED_Text;
+
+		//node Freight[0,n]{
+		//[Label("Product Type")][Transient]element ProdType:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		//[Label("Pickup Rate")][Transient]element PicRate:apCommonGDT:Amount;
+		//[Label("Pickup Minimum")][Transient]element PickupMin:apCommonGDT:Amount;
+		//[Label("Delivery Rate")][Transient]element DelRate:apCommonGDT:Amount;
+		//[Label("Delivery Minimum")][Transient]element DelMin:apCommonGDT:Amount;
+		//}
+
+
+		//**********Payment Terms****************//
+		
+		[Label("Account Name")]element AccountName:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Date Time")]element PTDateTime:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Information Message")]element InfoMessage:LANGUAGEINDEPENDENT_EXTENDED_Text;				
+		element NonSTD:Indicator;
+		element BackColor:LANGUAGEINDEPENDENT_MEDIUM_Text;
+
+		//node PaymentTerms[0,n]{
+		[Label("Product Type")]element ProdTypeDesc:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Product Terms")]element TermsDesc:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		[Label("Tactical Category")]element TacticalCat:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element IsPayTermData:Indicator;
+		//}
+
+
+	
+		association ToCustomer [1,1] to Customer;
+		action GetFreightInfo ;
+		action GetPaymentTerms ;
+
+}

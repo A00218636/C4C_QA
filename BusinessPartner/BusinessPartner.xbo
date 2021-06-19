@@ -1,0 +1,31 @@
+﻿import AP.Common.GDT;
+import AP.FO.BusinessPartner.Global;
+import AP.PDI.bo;
+
+
+
+[Extension] businessobject AP.FO.BusinessPartner.Global:BusinessPartner raises Duplicacy {
+ 
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+		message Duplicacy text "Duplicate Contact Person cannot be saved.";
+		
+    
+     
+   		node Common {
+		//element ZAreaCode:String;
+		//element ZExtID:ID;
+		//element ZSubject:LongText;
+		//element ZBody:LongText;
+		//
+		//element ZNotes: TextCollectionTextTypeCode;
+        
+		
+			
+   	    } 
+
+	
+
+		
+  
+}
