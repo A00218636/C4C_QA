@@ -1,0 +1,159 @@
+﻿import ABSL;
+import AP.Common.GDT;
+import AP.FO.BusinessPartner.Global;
+
+
+var result : DataType::Indicator;
+var currUser = LoggedInUser.GetUserID();
+
+var contact = BusinessPartner.Retrieve(Cont_ID);
+
+if (contact.IsSet())
+{
+	var contactRole = contact.Role.Where(k => k.RoleCode.content == "BUP001");
+	if (contactRole.Count() > 0)
+	{
+
+		//SAVE EMAIL AS LOWER-CASE
+		if (contact.CurrentDefaultIsContactPersonFor.IsSet())
+		{
+			if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.IsSet())
+			{
+				if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+				{
+					if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+					{
+						if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+						{
+							var workAdd = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress;
+						
+							if (workAdd.DefaultEMail.IsSet())
+							{
+								workAdd.DefaultEMail.URI.content = workAdd.DefaultEMail.URI.content.ToLowerCase();
+								contact.Common.GetFirst().ZContactEmail.content = workAdd.DefaultEMail.URI.content;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		var currCommon = contact.CurrentCommon;
+
+		if (currCommon.IsSet())
+		{
+			//TO NOT TRIGGER BACK AN UPDATE BACK TO HYBRIS PUT A CHECK
+			if (currUser != "_CAMS_ODATA" && currUser != "_CPI")
+			{
+				//var fn;
+				//var dbfn;
+				//var ln;
+				//var dbln;
+				//if (!currCommon.Person.IsInitial())
+				//{
+				//fn = currCommon.Person.Name.GivenName;
+				//dbfn = currCommon.GetFromDB().Person.Name.GivenName;
+				//ln = currCommon.Person.Name.FamilyName;
+				//dbln = currCommon.GetFromDB().Person.Name.FamilyName;
+				//}
+				//
+				if (contact.Status.LifeCycleStatusCode == "4" || contact.Status.LifeCycleStatusCode == "2")
+				{
+					var req : Library::Contact.Contact_C4C.Request;
+
+
+					if (contact.Relationship.Count() > 0)
+					{
+						foreach (var rel in contact.Relationship)
+						{  
+							if (rel.RoleCode.content == "BUR001-2")
+							{
+								var bpID = rel.RelationshipBusinessPartnerInternalID;
+
+								var custDetails = Customer.Retrieve(bpID);
+								//var gid = custDetails.Identification.Where(k => k.PartyIdentifierTypeCode.content == "Z001");
+								var gid = custDetails.Common.GetFirst().ZGAN;
+								if (!gid.IsInitial())
+								{				
+									req.AccountID.Add(gid);
+								}
+		
+							}
+						}
+   
+
+						//TRIGGER IF GAN IS AVAILABLE
+						if (req.AccountID.Count() > 0)
+						{
+							//req.UUID = contact.UUID.content.ToString();
+
+							//req.AccountName = contact.CurrentCommon.BusinessPartnerFormattedName;
+							req.FirstName = contact.CurrentCommon.Person.Name.GivenName;
+							req.LastName = contact.CurrentCommon.Person.Name.FamilyName;
+							//req.MiddleName = contact.CurrentCommon.Person.Name.MiddleName;
+							req.Birthdate = contact.CurrentCommon.Person.BirthDate.ToString();
+							req.ContactID = contact.InternalID;
+							//req.CreatedBy = contact.CreationIdentity.FormattedName;
+							if (contact.CurrentDefaultIsContactPersonFor.IsSet())
+							{
+								if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.IsSet())
+								{
+									if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+									{
+										if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+										{
+											if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+											{
+												var workAdd = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress;
+						
+												if (workAdd.DefaultEMail.IsSet())
+												{
+													req.Email = workAdd.DefaultEMail.URI.content;
+												}
+												if (workAdd.DefaultFacsimile.IsSet())
+												{
+													req.Fax = workAdd.DefaultFacsimile.FormattedNumberDescription; 
+												}
+					
+												//
+												if (workAdd.DefaultMobilePhone.IsSet())
+												{
+													req.Mobile = workAdd.DefaultMobilePhone.FormattedNumberDescription; 
+												}
+												//
+												if (workAdd.DefaultConventionalPhone.IsSet())
+												{
+													req.WorkPhone = workAdd.DefaultConventionalPhone.FormattedNumberDescription; 
+												}
+												req.Status = contact.Status.LifeCycleStatusCode;
+												if (workAdd.DefaultWorkplaceRepresentation.IsSet())
+												{
+													req.JobTitle = workAdd.DefaultWorkplaceRepresentation.FunctionalTitleName; 
+												}
+
+												req.Salutation = contact.CurrentCommon.Person.Name.FormOfAddressCode.content;
+												//req.Salutation = contact.CurrentCommon.Person.Name.AcademicTitleCode.content;
+												//req.PrimaryRole = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.BusinessPartnerFunctionTypeCode.GetDescription();
+												req.PrimaryRole = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.BusinessPartnerFunctionTypeCode.content;
+												
+								
+												var response = Library::Contact.Contact_C4C(req, " ", "Contact_CPI_Out");
+												result = true;
+												req.Clear();
+												response.Clear();
+											}
+										}
+									}
+								}
+					
+							}
+						}
+					}
+			
+				}
+			}
+		}
+	}
+}
+
+return result;

@@ -1,0 +1,16 @@
+﻿import ABSL;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+
+
+
+
+var result : DataType::LANGUAGEINDEPENDENT_EXTENDED_Text;
+var identityUUID = Context.GetCurrentIdentityUUID();
+var identity = Identity.Retrieve(identityUUID);
+if (identity.IsSet())
+{
+	result = identity.ID.content;
+}
+
+return result;

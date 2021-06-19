@@ -1,0 +1,28 @@
+﻿import AP.Common.GDT as apCommonGDT;
+import AP.CRM.Global;
+
+[Extension] businessobject AP.CRM.Global:Lead raises SurveyWarning{
+ 
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+
+		message SurveyWarning text "Complete Customer Discovery Form";
+		// Begin of code Added By manish on 23/02/21
+		//message ZPerceivedbenefits text "Please enter Atleast two Perceived Benefits";
+		//message ZPerceivedCost text "Please enter Atleast two Perceived Cost";
+		// EOD of code Added By manish on 23/02/21
+       [Label("Lead External ID")]element ZLeadExt:ShortText;
+	   element ZQualStatusChangeSince:Date;
+	 
+	  
+   		node Party {
+   	    } 
+    
+   		node Item {
+   	    } 
+    
+   		node InstalledObject {
+   	    } 
+     
+  action CancelLead;
+}

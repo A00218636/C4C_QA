@@ -1,0 +1,24 @@
+﻿import ABSL;
+import AP.Common.GDT;
+import AP.FO.BusinessPartner.Global;
+
+var result : DataType::Indicator;
+
+var account = Customer.Retrieve(AccountID);
+
+if(account.IsSet())
+{
+  var busType = account.Common.GetFirst().ZBusinessType;
+  if(busType=="111")
+  {
+    result = true;
+    
+  }
+  else
+  {  
+   result = false;  
+  }
+}
+
+
+return result;

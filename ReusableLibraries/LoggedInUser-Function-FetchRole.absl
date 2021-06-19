@@ -1,0 +1,23 @@
+﻿import ABSL;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+var result : DataType::Indicator;
+
+var identityUUID = Context.GetCurrentIdentityUUID();
+
+var roles = IdentityUtilities.GetAssignedBusinessRoles(identityUUID);
+if (roles.BusinessRoles.Count() > 0)
+{
+	foreach (var businessRole in roles.BusinessRoles)
+	{
+
+		if ((businessRole.content == "COM_SALES_MANAGER") || (businessRole.content == "COM_SALES_OPS") || (businessRole.content == "COM_SALES_USER"))
+		{
+
+			result = true;
+
+		}
+
+	}
+}
+return result;

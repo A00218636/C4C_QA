@@ -1,0 +1,37 @@
+﻿import ABSL;
+import AP.PDI.bo;
+import AP.FO.BusinessPartner.Global;
+import AP.CRM.Global;
+import AP.FO.MOM.Global;
+import AP.PC.IdentityManagement.Global;
+
+var result : DataType::String;
+// Set Team of logged in User 
+var logg = LoggedInUser.GetLoggedInUserEMPID();
+var identityUUID = Context.GetCurrentIdentityUUID();
+var identity = Identity.Retrieve(identityUUID);
+var employee = Employee.Retrieve(identity.BusinessPartnerUUID);
+var finalResult : String;
+
+var CurrentOrg : collectionof OrganisationalUnit.EmployeeAssignment;
+
+if (employee.IsSet())
+{
+	var empOrg;
+	var empDetails : String;
+
+	var sep;
+	sep = ",";
+	CurrentOrg = employee.OrganisationalUnitAssignment;
+	foreach (var org in CurrentOrg)
+	{
+		if (org.ValidityPeriod.EndDate.GreaterThan(Context.GetCurrentSystemDate()))
+		{
+			empOrg = org.ToParent.ID; 
+			empDetails = empOrg + sep + empDetails;
+		}
+	}
+	finalResult = empDetails;
+}
+result = finalResult;
+return result;

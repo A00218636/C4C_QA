@@ -1,0 +1,40 @@
+﻿import ABSL;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+import AP.FO.BusinessPartner.Global;
+
+var result : DataType::CountryCode;
+
+var identityUUID=Context.GetCurrentIdentityUUID();
+var identity=Identity.Retrieve(identityUUID);
+
+
+if(identity.IsSet())
+{
+   var bpUUID = identity.BusinessPartnerUUID;
+	var emp = Employee.Retrieve(bpUUID);
+
+	if (emp.CurrentDefaultEmployeeWorkplaceAddressInformation.IsSet())
+	{
+		if (emp.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressOrganisationAddress.IsSet())
+		{
+			if (emp.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressOrganisationAddress.DefaultPostalAddressRepresentation.IsSet())
+			{
+				var countryCode = emp.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressOrganisationAddress.DefaultPostalAddressRepresentation.CountryCode;
+				if (countryCode == "CA")
+				{
+					result = "CA";
+				}
+				else if(countryCode == "US" || countryCode!="CA")
+				//else if(countryCode == "US")
+				{
+					result = "US";
+				}
+
+								
+			}
+		}
+	}
+}
+
+return result;

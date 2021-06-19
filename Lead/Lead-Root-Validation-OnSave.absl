@@ -1,0 +1,111 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Lead
+		Node: Root
+		Validation: OnSave 
+
+		Script file signature
+		----------------------------
+		Returns: Boolean
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script before an instance of the business object is saved to the data base.
+		It can have a return value of either true or false, which determines whether the instance of the business object is saved or not.
+		All fields in this business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+import AP.FO.Activity.Global;
+import AP.PC.ActivityManagement.Global;
+
+//ON CONVERSION IF HOT CHECK SURVEY
+//var valCollUUID;
+//if (this.Status.LifeCycleStatusCode == "6")
+//{
+	//if (this.QualificationLevelCode.content == "03")
+	//{  
+	//
+		//var query = Questionnaire.ValuationCollection.QueryByElements;
+		//var selectionParams = query.CreateSelectionParams();
+		//selectionParams.Add(query.ValuationCollectionLifeCycleStatusCode, "I", "EQ", "1");
+		//selectionParams.Add(query.ValuationCollectionBusinessTransactionDocumentTypeCode, "I", "EQ", "64");
+		//selectionParams.Add(query.ValuationCollectionBusinessTransactionDocumentUUID.content, "I", "EQ", this.UUID.content);
+		//// Result
+		//var resultData = query.ExecuteDataOnly(selectionParams);
+//
+		//
+		//if (resultData.Count() > 0)
+		//{   
+			//////TODO					 
+			//raise SurveyWarning.Create("E");
+			//return false;
+	//
+//
+		//}
+	//}
+			//
+//}
+//CHECK DUPLICATE CONTACT
+
+// Begin of code Added By manish on 23/02/21
+//var count = 0;
+//var lv_Save;
+//if (!this.ZPerceivedBenefits_1.IsInitial()){ count = count + 1; }
+//if (!this.ZPerceived_Benefits_2.IsInitial()){count = count + 1; }
+//if (!this.ZPerceived_Benefits_3.IsInitial()){count = count + 1; }
+//if (!this.ZPerceived_Benefits_4.IsInitial()){count = count + 1; }
+//if (count <2)
+//{
+	//raise ZPerceivedbenefits.Create("E");
+	//return false;
+//}
+//var Count_PC = 0;
+//if (!this.ZPerceivedCose_1.IsInitial()) { Count_PC = Count_PC + 1; }
+//if (!this.ZPerceivedCose_2.IsInitial()) { Count_PC = Count_PC + 1; }
+//if (!this.ZPerceivedCose_3.IsInitial()) { Count_PC = Count_PC + 1; }
+//if (!this.ZPerceivedCose_4.IsInitial()) { Count_PC = Count_PC + 1; }
+//
+//if (Count_PC <2)
+//{
+	//raise ZPerceivedCost.Create("E");
+	//return false;
+//}
+
+//if (!this.ZPerceivedBenefits_1.IsInitial())
+//{
+//if (!this.ZPerceived_Benefits_2.IsInitial() && !this.ZPerceived_Benefits_3.IsInitial() || !this.ZPerceived_Benefits_4.IsInitial()) { global = true; }
+//else if (!this.ZPerceived_Benefits_2.IsInitial() && !this.ZPerceived_Benefits_3.IsInitial() || this.ZPerceived_Benefits_4.IsInitial()) { global = true; }
+//else if (!this.ZPerceived_Benefits_2.IsInitial() && !this.ZPerceived_Benefits_4.IsInitial() || this.ZPerceived_Benefits_3.IsInitial()) { global = true; }
+//} 
+//else if (!this.ZPerceived_Benefits_2.IsInitial())
+//{
+//if (this.ZPerceivedBenefits_1.IsInitial() || this.ZPerceived_Benefits_3.IsInitial() || this.ZPerceived_Benefits_4.IsInitial())
+//{
+//raise ZPerceivedbenefits.Create("E");
+//return false;
+//}
+//}
+//else if (!this.ZPerceived_Benefits_3.IsInitial())
+//{
+//if (this.ZPerceivedBenefits_1.IsInitial() || this.ZPerceived_Benefits_2.IsInitial() || this.ZPerceived_Benefits_4.IsInitial())
+//{
+//raise ZPerceivedbenefits.Create("E");
+//return false;
+//}
+//}
+//else if (!this.ZPerceived_Benefits_4.IsInitial())
+//{
+//if (this.ZPerceivedBenefits_1.IsInitial() || this.ZPerceived_Benefits_2.IsInitial() || this.ZPerceived_Benefits_3.IsInitial())
+//{
+//raise ZPerceivedbenefits.Create("E");
+//return false;
+//}
+//}
+//
+//if (!this.ZPerceivedCose_1.IsInitial()) { }
+
+// EOD of code Added By manish on 23/02/21
+return true;

@@ -1,0 +1,15 @@
+﻿import ABSL;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+import AP.FO.BusinessPartner.Global;
+
+var result : DataType::EmployeeID;
+
+var identityUUID = Context.GetCurrentIdentityUUID();
+var identity = Identity.Retrieve(identityUUID);
+var employee = Employee.Retrieve(identity.BusinessPartnerUUID);
+if (employee.IsSet())
+{
+	result = employee.IdentificationEmployeeID.EmployeeID.RemoveLeadingZeros();
+}
+return result;

@@ -1,0 +1,21 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Lead
+		Node: Root
+		Action: CancelLead 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import ABSL;
+
+//this.Status.UserStatusCode = "02";
+//this.Status.UserStatusCode = "05";
+//
+this.Reject();
+this.ResultReasonCode.content = "Z13";
+//this.Status.UserStatusCode = "02";
