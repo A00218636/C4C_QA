@@ -1,0 +1,39 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: CustomerQuote
+		Node: ItemProduct
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+if(this.ToParent.IsSet())
+{
+	if(!this.ProductCategoryHierarchyProductCategoryIDKey.IsInitial())
+	{
+		var CatID = this.ProductCategoryHierarchyProductCategoryIDKey.ProductCategoryInternalID.RemoveLeadingZeros();
+		var ProductID = this.ProductKey.ProductID.content;
+		if(this.ToRoot.ItemProposal.Count()>0)
+		{
+			if (CatID != "Z0109")
+			{
+				this.ToRoot.ZSDK_ProductValid = true;			
+			}
+			else if (CatID == "Z0109")
+			{
+				this.ToRoot.ZSDK_ProductValid = false;
+			}
+		}
+	}
+}
+
+
+
+

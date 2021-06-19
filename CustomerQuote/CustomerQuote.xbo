@@ -1,0 +1,32 @@
+﻿import AP.Common.GDT;
+import AP.CRM.Global;
+
+[Extension] businessobject AP.CRM.Global:CustomerQuote raises MandatoryError{
+ 
+
+      message MandatoryError text "Error &1.": LANGUAGEINDEPENDENT_EXTENDED_Text;
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+	//	[Scenario(CustomerQuote)]element ZCustExtID:ShortText;
+	//[Scenario(CustomerQuote)]element ZQGAN :ShortText;
+	[Scenario(QuoteProcessExtension,OrderStandardFlow)]element ZQGAN :ShortText;
+	[Scenario(QuoteProcessExtension)]element ZQExtRef :ShortText;
+	[Transient] element ZSDK_ProductValid : Indicator;  
+	element ZSDK_SaveRestrict : Indicator;
+
+   		node Item {
+
+
+      		node ItemParty {
+      	    } 
+        } 
+    
+   		node Party {
+   	    } 
+    
+   		node ItemProposal {
+		   
+   	    } 
+     
+  action createFollowUpDoc;
+}

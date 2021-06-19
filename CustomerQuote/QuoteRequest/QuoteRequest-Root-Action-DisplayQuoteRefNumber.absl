@@ -1,0 +1,24 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: QuoteRequest
+		Node: Root
+		Action: DisplayQuoteRefNumber 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import ABSL;
+
+if(!this.QuoteReference.IsInitial())
+{
+this.displayPopup = true;
+this.displayMessage.content = "Your Quote has been created with Quote Reference number - " + this.QuoteReference + "\n" + "\n" + "Please wait for 40-45 Seconds";
+}
+else
+{
+this.displayPopup = false;
+}

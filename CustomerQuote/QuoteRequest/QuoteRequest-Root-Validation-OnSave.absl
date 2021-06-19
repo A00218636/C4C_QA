@@ -1,0 +1,79 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: QuoteRequest
+		Node: Root
+		Validation: OnSave 
+
+		Script file signature
+		----------------------------
+		Returns: Boolean
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script before an instance of the business object is saved to the data base.
+		It can have a return value of either true or false, which determines whether the instance of the business object is saved or not.
+		All fields in this business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+
+var MSG1 = "Sales Quote cannot be saved. Please check with your System administrator.";
+var MSG2 = "Please select an Invoicing Account.";
+var MSG3 = "Please enter Mandatory Information.";
+var MSG4 = "Please enter a Non-Generic Product.";
+var MSG5 = "Valid To Date Should be Greater than Valid From Date.";
+
+var count = 0;
+var currUser = Library::LoggedInUser.GetCurrentUserID();
+
+if (currUser != "_CPI")
+{
+	if (this.HybrisGenerated == false)
+	{
+		if (this.displayError == true) //If No Response received from Hybris
+		{
+			raise MsgError.Create("E", MSG1);
+			count = count + 1;
+		}
+
+		if (this.validAccount == false) //If No Response received from Hybris
+		{
+			raise MsgError.Create("E", MSG2);
+			count = count + 1;
+		}
+
+		if (this.mandatoryIndicator == true)
+		{
+			raise MsgError.Create("E", MSG3);
+			count = count + 1;
+		}
+
+		if (this.Item.Count() == 0)
+		{
+			raise MsgError.Create("E", MSG4);
+			count = count + 1;
+		}
+
+		var currentDate = Context.GetCurrentSystemDate();
+		var validTo = this.ValidTo.GreaterThan(currentDate);
+		if (validTo == false)
+		{
+			raise MsgError.Create("E", MSG5);
+			count = count + 1; 
+		}
+	}
+}
+
+
+//Save
+if (count == 0)
+{
+	return true;
+}
+else
+{
+	return false;
+}

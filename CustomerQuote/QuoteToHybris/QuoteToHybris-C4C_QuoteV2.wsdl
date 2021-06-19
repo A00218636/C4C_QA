@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://C4C_Quote" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"  name="C4C_Quote"  targetNamespace="http://C4C_Quote">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://C4C_Quote">
+         <xsd:element name="Quote">
+		  <xsd:complexType>
+            <xsd:sequence>		
+				<xsd:element minOccurs="0" name="Currency" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="CreatedOnDate" type="xsd:string"/>
+			    <xsd:element minOccurs="0" name="PrimaryContact" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="AccountExternalID" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="CustomerComment" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="endUserCode" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="ZmarketSegment" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="shipToUnit" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="CreatedBy" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="jobLocation" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="NetAmount" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="QuoteOwner" type="xsd:string"/>
+				<xsd:element name="Product" minOccurs="0" maxOccurs="unbounded">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="c4cItemId" type="xsd:string"/>
+							<xsd:element name="Quantity" type="xsd:string"/>
+							<xsd:element name="UnitOfMeasure" type="xsd:string"/>
+							<xsd:element name="totalPrice" type="xsd:string"/>
+							<xsd:element name="entryNumber" type="xsd:string"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element minOccurs="0" name="ProcessingTypeCode" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="LogicalSystemID" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="c4cQuoteExternalQuoteId" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="quoteExpirationDate" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="c4cCpiSalesOrganization" type="xsd:string"/>		
+				<xsd:element minOccurs="0" name="c4cCpiDivision" type="xsd:string"/>
+				<xsd:element minOccurs="0" name="CurrentUser" type="xsd:string"/>	
+				<xsd:element minOccurs="0" name="c4cCpiDistributionChannel" type="xsd:string"/>	
+				<xsd:element minOccurs="0" name="description" type="xsd:string"/>
+            </xsd:sequence>
+         </xsd:complexType>
+		</xsd:element>
+      <xsd:element name="WriteQuoteObjectInstanceResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="QuoteInformationResponse" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+	  </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="QuoteCreate">
+    <wsdl:part element="tns:Quote" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="QuoteInstancesResponse">
+    <wsdl:part element="tns:WriteQuoteObjectInstanceResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:portType name="C4C_Quote">
+    <wsdl:operation name="Quote_C4C">
+      <wsdl:input message="tns:QuoteCreate"/>
+	  <wsdl:output message="tns:QuoteInstancesResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="SI_C4C_QuoteBinding" type="tns:C4C_Quote">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="Quote_C4C">
+      <soap:operation soapAction="http://C4C_Quote/Quote_C4C"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+	  <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="C4C_Quote">
+    <wsdl:port name="SI_C4C_QuoteBinding" binding="tns:SI_C4C_QuoteBinding">
+      <soap:address location="https://mohawk.it-cpi013-rt.cfapps.us21.hana.ondemand.com/cxf/Quote"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

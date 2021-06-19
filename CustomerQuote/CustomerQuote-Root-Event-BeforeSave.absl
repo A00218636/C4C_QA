@@ -1,0 +1,501 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: CustomerQuote
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+
+var current_emp_uuid = Context.GetCurrentIdentityUUID();
+var current_employee_name;
+var bupa_id;
+if (!current_emp_uuid.content.IsInitial())
+{
+	bupa_id = Identity.Retrieve(current_emp_uuid).ID.content;		//Check for LoggedIn User
+}
+
+
+
+
+//FOR SALES ORDER MAIN ACCOUNT
+if (bupa_id == "_XCHANGE" || bupa_id == "_CPI" || bupa_id == "KUMARP" || bupa_id == "CONFIG.ANUPAM") //Execute business logic for Interface
+{
+	var accountRef : elementsof CustomerQuote.Party;	
+	var refaccount : CustomerQuote.Party;	
+	var queryCust = Customer.QueryByIdentification;
+	var selParam = queryCust.CreateSelectionParams();
+	var buyerPartyindicator : Indicator=" ";
+	//var buyerPartyindicator : Indicator= false;
+
+	if (!this.ZQGAN.IsInitial())
+	{
+		selParam.Add(queryCust.ZGAN_EA8AE8AUBVHCSXVYS0FJ1R3ON, "I", "EQ", this.ZQGAN);	
+		var result = queryCust.ExecuteDataOnly(selParam);
+		var resultInt = result.GetFirst();
+		if (!resultInt.IsInitial())
+		{
+			foreach (var buyerParty in this.Party)
+			{
+				if (buyerParty.RoleCode == "1001")
+				{
+					buyerParty.PartyKey.PartyID.content = resultInt.InternalID;
+					buyerPartyindicator = "X";
+					//buyerPartyindicator = true;
+					//this.BuyerID.content = resultInt.InternalID;
+				}
+			}
+			if (buyerPartyindicator.ToString() == " ")
+			{
+				accountRef.RoleCode = "1001";
+				accountRef.PartyKey.PartyID.content = resultInt.InternalID;
+				accountRef.MainIndicator = "X";
+				//accountRef.MainIndicator = true;
+				this.Party.Create(accountRef);
+				this.BuyerID.content = resultInt.InternalID;
+			}
+		}
+	}
+
+	// Check for External Reference for Quote - Sales ORder Replication
+	if (this.ProcessingTypeCode == "ZOR")
+	{
+		if (this.BusinessTransactionDocumentReference.GetFirst().IsSet())
+		{
+			var BuyerParty = this.BusinessTransactionDocumentReference.GetFirst().CustomerQuote.ID.content.RemoveLeadingZeros();
+			var Query = CustomerQuote.QueryByElements;
+			var selectionParam = Query.CreateSelectionParams();
+			selectionParam.Add(Query.BuyerID.content, "I", "EQ", BuyerParty);
+			var result = Query.Execute(selectionParam);
+			if (result.Count() > 0)
+			{
+				var QuoteId = result.GetFirst().ID.content;
+				//this.BusinessTransactionDocumentReference.CustomerQuote.GetFirst().ID.;
+				//this.BusinessTransactionDocumentReference.Create();
+			}
+		}
+	}
+}	
+
+//Create custom quote instance from Hybris request
+if (this.ProcessingTypeCode == "ZAG")
+{
+	//UPDATE OWL FIELDS EVERYTIME AN UPDATE HAPPENS FROM ANY USER OR TECHNICAL USER
+
+	//Query Custom quote with Ref no.BuyerID
+	var query = BusinessObject::QuoteRequest.QueryByElements;
+	// Selection
+	var selectionParams = query.CreateSelectionParams();
+	selectionParams.Add(query.QuoteReference, "I", "EQ", this.BuyerID.RemoveLeadingZeros().content);  //ExternalReferenceID
+	// Result
+	var resultData = query.ExecuteDataOnly(selectionParams);
+
+	//IF CUSTOM QUOTE EXISTS THEN UPDATE
+	if (resultData.Count() > 0)
+	{
+		var qrID = resultData.GetFirst().QuoteReqID;
+		var quoteItemU : elementsof QuoteRequest.Item;
+		if (!qrID.IsInitial())
+		{
+			var qrInst = BusinessObject::QuoteRequest.Retrieve(qrID);
+			if (qrInst.IsSet())
+			{
+				qrInst.CustomerQuoteID.content = this.ID.RemoveLeadingZeros().content;
+				qrInst.Description = this.Name.content;
+				qrInst.ValidTo = this.ValidityPeriod.TimePointPeriod.EndTimePoint.Date;
+				qrInst.Date = this.ValidityPeriod.TimePointPeriod.StartTimePoint.Date;
+				qrInst.MarketSegment.content = this.ZMarketSegment;
+				//qrInst.validAccount = false;
+				if (!this.Status.IsInitial())
+				{
+					qrInst.Progress_New = this.Status.CustomerQuoteResultStatusCode.GetDescription();
+					qrInst.Status = this.Status.ItemListCustomerQuoteLifeCycleStatusCode.GetDescription();
+					qrInst.StatusCode = this.Status.ItemListCustomerQuoteLifeCycleStatusCode;
+					qrInst.ProgressCode = this.Status.CustomerQuoteResultStatusCode;
+				}
+				//Opportunity
+				if(this.OpportunityReference.Count() > 0)
+				{
+					var oppReference = this.OpportunityReference;
+					if(oppReference.GetFirst().IsSet())
+					{
+						qrInst.OpportunityID.content = oppReference.GetFirst().BusinessTransactionDocumentReference.ID.content.RemoveLeadingZeros();
+						var oppInst = Opportunity.Retrieve(qrInst.OpportunityID);
+						if(oppInst.IsSet())
+						{
+							qrInst.OpportunityName = oppInst.Name;
+						//	var oppbtdExists = oppInst.BusinessTransactionDocumentReference.Where(n => n.BusinessTransactionDocumentReference.TypeCode == "2059");
+							if(!this.Status.IsInitial())
+							{
+								if(this.Status.CustomerQuoteResultStatusCode == "3") // 3 - Quote Status "Won"
+								{
+									if(this.BusinessTransactionDocumentReference.Count() > 0)
+									{
+										var salesOrderBTD = this.BusinessTransactionDocumentReference.Where(n => n.BusinessTransactionDocumentReference.TypeCode == "2059"); // 2059 - Sales Order
+										if(salesOrderBTD.Count() > 0)
+										{
+											var quoteBtd = salesOrderBTD.GetFirst();
+											var btdRef : elementsof Opportunity.BusinessTransactionDocumentReference;
+											btdRef.BusinessTransactionDocumentReference.ID = quoteBtd.BusinessTransactionDocumentReference.ID;
+											btdRef.BusinessTransactionDocumentReference.TypeCode = quoteBtd.BusinessTransactionDocumentReference.TypeCode;
+											btdRef.BusinessTransactionDocumentRelationshipRoleCode = "2";
+											oppInst.BusinessTransactionDocumentReference.Create(btdRef);
+										}
+									}
+								}
+							}
+						}						
+					}
+				}
+				//TotalValue
+				if(this.TotalValues.IsSet() && !this.TotalValues.NetAmount.IsInitial())
+				{
+					qrInst.Total.content = this.TotalValues.NetAmount.content;
+					qrInst.Total.currencyCode = this.TotalValues.NetAmount.currencyCode;
+				}
+
+
+				// ItemUpdate
+				if (this.Item.Count() > 0)
+				{
+					qrInst.Item.Delete();
+					foreach (var custItem in this.Item)
+					{
+						if (custItem.ItemProduct.IsSet())
+						{
+							quoteItemU.Product.content = custItem.ItemProduct.ProductKey.ProductID.content;
+							quoteItemU.ProdLineID = custItem.ID;
+							quoteItemU.LineID = Library::UUID.Generate().ToString();
+							quoteItemU.Quantity.content = custItem.ItemTotalValues.OrderedQuantity.content;
+							if (custItem.ItemProduct.Material_V1.IsSet())
+							{
+								quoteItemU.Quantity.unitCode = custItem.ItemProduct.Material_V1.Common.BaseMeasureUnitCode;
+								quoteItemU.ProductSQID.content = custItem.ItemProduct.Material_V1.ObjectIdentifierMapping.GetFirst().RemoteObjectID.content;
+							}
+						}
+						qrInst.Item.Create(quoteItemU);
+					}
+				}
+
+
+				//END USER IS CREATED LATER IN STANDARD QUOTE BY CPI THROUGH ODATA 
+				if (this.Party.Count() > 0)
+				{
+					foreach (var party in this.Party)
+					{
+						if (party.RoleCode == "Z061") //Account
+						{
+							qrInst.EndUser = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+						}
+						if (party.RoleCode == "1001") //Account
+						{
+							qrInst.Account = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+						}
+						
+						if (party.RoleCode == "1005") //Ship-To
+						{
+							qrInst.ShipToUnit = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+						}
+		
+						if (party.RoleCode == "Z061") //End User
+						{
+							qrInst.EndUser = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+						}
+				
+						if (party.RoleCode == "44") //End User
+						{
+							qrInst.SalesOrg = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+						}
+						if (party.RoleCode == "39") //Quote Owner
+						{
+							var empParty = party.PartyUUID;
+							var emp = Employee.Retrieve(empParty);
+							qrInst.QuoteOwner.content = emp.IdentificationEmployeeID.EmployeeID.content.RemoveLeadingZeros();
+						}
+					}//FOREACH
+				}//IF
+			}//IF
+		}//IF
+	
+	}
+
+	//if (bupa_id == "_ODATA_HYBRI" || bupa_id == "_CPI" || bupa_id == "_XCHANGE" || bupa_id == "KUMARP" || bupa_id == "CONFIG.ANUPAM")
+	//{
+	//Query Custom quote with Ref no.BuyerID
+	//var query = BusinessObject::QuoteRequest.QueryByElements;
+	//// Selection
+	//var selectionParams = query.CreateSelectionParams();
+	//selectionParams.Add(query.QuoteReference, "I", "EQ", this.BuyerID.RemoveLeadingZeros().content);  //ExternalReferenceID
+	//// Result
+	//var resultData = query.ExecuteDataOnly(selectionParams);
+	//
+	//IF CUSTOM QUOTE NOT EXISTS WITH QUOTE_REFERENCE 
+	//if (resultData.Count() == 0)
+	else
+	{
+		if (bupa_id == "_ODATA_HYBRI" || bupa_id == "_CPI" || bupa_id == "KUMARP" || bupa_id == "ARORAS")
+		{
+			//CREATE A CUSTOM QUOTE OBJECT
+			var quoteHeaderElements : elementsof QuoteRequest;
+			var quoteItemColl : collectionof QuoteRequest.Item;
+			var quoteItemInst : elementsof QuoteRequest.Item;
+			//var quoteItemElements : elementsof BusinessObject::QuoteRequest.Item;
+
+			//******************************************************************************************
+			//quoteHeaderElements.Progress = this.Status.CustomerQuoteResultStatusCode.GetDescription();
+			//quoteHeaderElements.Status = this.Status.InformationLifeCycleStatusCode.GetDescription();
+
+			//Status and Progress
+			if (!this.Status.IsInitial())
+			{
+				quoteHeaderElements.Progress_New = this.Status.CustomerQuoteResultStatusCode.GetDescription();
+				quoteHeaderElements.Status = this.Status.ItemListCustomerQuoteLifeCycleStatusCode.GetDescription();
+				quoteHeaderElements.StatusCode = this.Status.ItemListCustomerQuoteLifeCycleStatusCode;
+				quoteHeaderElements.ProgressCode = this.Status.CustomerQuoteResultStatusCode;
+			}
+
+			//Description
+			quoteHeaderElements.Description = this.Name.content;
+
+			if (this.Party.Count() > 0)
+			{
+				foreach (var party in this.Party)
+				{
+					if (party.RoleCode == "1001") //Account
+					{
+						quoteHeaderElements.Account = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+					}
+						
+					if (party.RoleCode == "1005") //Ship-To
+					{
+						quoteHeaderElements.ShipToUnit = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+					}
+		
+					if (party.RoleCode == "Z061") //End User
+					{
+						quoteHeaderElements.EndUser = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+					}
+				
+					if (party.RoleCode == "44") //Sales Unit User
+					{
+						quoteHeaderElements.SalesOrg = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+					}
+					if (party.RoleCode == "39") //Quote Owner
+					{
+						var empParty = party.PartyUUID;
+						var emp = Employee.Retrieve(empParty);
+						quoteHeaderElements.QuoteOwner.content = emp.IdentificationEmployeeID.EmployeeID.content.RemoveLeadingZeros();
+					}
+				} //Foreach
+			} //if
+
+			quoteHeaderElements.CustomerQuoteID.content = this.ID.content.RemoveLeadingZeros();
+			quoteHeaderElements.HybrisGenerated = true;
+			quoteHeaderElements.QuoteReference = this.BuyerID.content.RemoveLeadingZeros();
+			quoteHeaderElements.MarketSegment.content = this.ZMarketSegment;
+			//Opportunity
+			if(this.OpportunityReference.Count() > 0)
+			{
+				var oppReference = this.OpportunityReference;
+				if(oppReference.GetFirst().IsSet())
+				{
+					quoteHeaderElements.OpportunityID.content = oppReference.GetFirst().BusinessTransactionDocumentReference.ID.content.RemoveLeadingZeros();
+					var oppInst = Opportunity.Retrieve(quoteHeaderElements.OpportunityID);
+					if(oppInst.IsSet())
+					{
+						quoteHeaderElements.OpportunityName = oppInst.Name;
+					}
+				}
+			}
+			//TotalValue
+			if(this.TotalValues.IsSet() && !this.TotalValues.NetAmount.IsInitial())
+			{
+				quoteHeaderElements.Total.content = this.TotalValues.NetAmount.content;
+				quoteHeaderElements.Total.currencyCode = this.TotalValues.NetAmount.currencyCode;
+			}
+
+		
+			//Create Instance of Custom BO - QuoteCreate
+			var rootInstance;
+			rootInstance = QuoteRequest.Create(quoteHeaderElements);
+			// Add Item Details for CustomerRequest BO 
+			if (this.Item.Count() > 0)
+			{
+				foreach (var custItem in this.Item)
+				{
+					if (custItem.ItemProduct.IsSet())
+					{
+						quoteItemInst.Product.content = custItem.ItemProduct.ProductKey.ProductID.content;
+						quoteItemInst.ProdLineID = custItem.ID;
+						quoteItemInst.LineID = Library::UUID.Generate().ToString();
+						//quoteItemInst.Quantity.content = custItem.ItemTotalValues.OrderedQuantity.content;
+						quoteItemInst.Quantity.content = custItem.FirstRequestedItemScheduleLine.Quantity.content;
+						if (custItem.ItemProduct.Material_V1.IsSet())
+						{
+							quoteItemInst.Quantity.unitCode = custItem.ItemProduct.Material_V1.Common.BaseMeasureUnitCode;
+							quoteItemInst.ProductSQID.content = custItem.ItemProduct.Material_V1.ObjectIdentifierMapping.GetFirst().RemoteObjectID.content;
+						}
+					}
+					rootInstance.Item.Create(quoteItemInst);
+				}
+			}
+
+
+			//RETRIEVE ACCOUNT, END-USER and SHIP-TO------------------->
+			//var account = Customer.Retrieve(this.BuyerParty.PartyUUID);
+			//if (account.IsSet())
+			//{
+			//if (account.CurrentCommon.IsSet())
+			//{
+			//quoteHeaderElements.AccountName = account.CurrentCommon.BusinessPartnerFormattedName;
+			//}
+			//}
+		
+			//foreach (var party in this.Party)
+			//{
+			//if (party.RoleCode == "Z061")
+			//{
+			//
+			//if (party.Customer.CurrentCommon.IsSet())
+			//{
+			//quoteHeaderElements.EndUserName = party.Customer.CurrentCommon.BusinessPartnerFormattedName;
+			//}
+			//
+			//}
+			//
+			//if (party.RoleCode == "1005")
+			//{
+			//if (party.Customer.CurrentCommon.IsSet())
+			//{
+			//quoteHeaderElements.ShipToUnitName = party.Customer.CurrentCommon.BusinessPartnerFormattedName;
+			//}
+			//}
+			//
+			//}
+
+			//**************NOT REQUIRED, OWL SHOWS ONLY HEADER ELEMENTS**********//
+			//if(!quoteHeaderElements.IsInitial())
+			//{
+			//rootInstance = BusinessObject::QuoteRequest.Create(quoteHeaderElements);
+			//ID = rootInstance.QuoteReqID;
+			//}
+			//
+			//var itemInstance;
+			////ADD ITEMS
+			//foreach (var itm in this.Item)
+			//{		    
+			//quoteItemElements.LineID = Library::UUID.Generate().ToString();
+			//quoteItemElements.Product = itm.ItemProduct.ProductInternalID.RemoveLeadingZeros();
+			//quoteItemElements.Quantity.content = itm.FirstRequestedItemScheduleLine.Quantity.content;
+			//quoteItemElements.Quantity.unitCode = itm.FirstRequestedItemScheduleLine.Quantity.unitCode;
+			//
+			//
+			//itemInstance = rootInstance.Item.Create(quoteItemElements);
+			//
+			//}
+
+			//var req = Library::QuoteRequest.QuoteRequestToHybris(this.ID);
+
+			//**********************************//
+		}//IF NO CUSTOM QUOTE EXISTS
+
+		//QUOTE EXISTS WITH QUOTE_REFERENCE THEN UPDATE CUSTOM BO WITH INTERNAL ID AND OTHER DETAILS
+		//else
+		//{
+		//var qrID = resultData.GetFirst().QuoteReqID;
+		//var quoteItemU : elementsof QuoteRequest.Item;
+		//if (!qrID.IsInitial())
+		//{
+		//var qrInst = BusinessObject::QuoteRequest.Retrieve(qrID);
+		//if (qrInst.IsSet())
+		//{
+		//qrInst.CustomerQuoteID.content = this.ID.RemoveLeadingZeros().content;
+		//qrInst.Description = this.Name.content;
+		//qrInst.ValidTo = this.ValidityPeriod.TimePointPeriod.EndTimePoint.Date;
+		//qrInst.Date = this.ValidityPeriod.TimePointPeriod.StartTimePoint.Date;
+		//qrInst.MarketSegment.content = this.ZMarketSegment;
+		//if (!this.Status.IsInitial())
+		//{
+		//qrInst.Progress_New = this.Status.CustomerQuoteResultStatusCode.GetDescription();
+		//qrInst.Status = this.Status.ItemListCustomerQuoteLifeCycleStatusCode.GetDescription();
+		//qrInst.StatusCode = this.Status.ItemListCustomerQuoteLifeCycleStatusCode;
+		//qrInst.ProgressCode = this.Status.CustomerQuoteResultStatusCode;
+		//}
+		//// ItemUpdate
+		//if (this.Item.Count() > 0)
+		//{
+		//qrInst.Item.Delete();
+		//foreach (var custItem in this.Item)
+		//{
+		//if (custItem.ItemProduct.IsSet())
+		//{
+		//quoteItemU.Product.content = custItem.ItemProduct.ProductKey.ProductID.content;
+		//quoteItemU.ProdLineID = custItem.ID;
+		//quoteItemU.LineID = Library::UUID.Generate().ToString();
+		//quoteItemU.Quantity.content = custItem.ItemTotalValues.OrderedQuantity.content;
+		//if (custItem.ItemProduct.Material_V1.IsSet())
+		//{
+		//quoteItemU.Quantity.unitCode = custItem.ItemProduct.Material_V1.Common.BaseMeasureUnitCode;
+		//quoteItemU.ProductSQID.content = custItem.ItemProduct.Material_V1.ObjectIdentifierMapping.GetFirst().RemoteObjectID.content;
+		//}
+		//}
+		//qrInst.Item.Create(quoteItemU);
+		//}
+		//}
+		//
+		//
+		////END USER IS CREATED LATER IN STANDARD QUOTE BY CPI THROUGH ODATA 
+		//if (this.Party.Count() > 0)
+		//{
+		//foreach (var party in this.Party)
+		//{
+		//if (party.RoleCode == "Z061") //Account
+		//{
+		//qrInst.EndUser = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+		//}
+		//if (party.RoleCode == "1001") //Account
+		//{
+		//qrInst.Account = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+		//}
+		//
+		//if (party.RoleCode == "1005") //Ship-To
+		//{
+		//qrInst.ShipToUnit = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+		//}
+		//
+		//if (party.RoleCode == "Z061") //End User
+		//{
+		//qrInst.EndUser = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+		//}
+		//
+		//if (party.RoleCode == "44") //End User
+		//{
+		//qrInst.SalesOrg = party.PartyKey.PartyID.RemoveLeadingZeros().content;
+		//}
+		//if (party.RoleCode == "39") //Quote Owner
+		//{
+		//var empParty = party.PartyUUID;
+		//var emp = Employee.Retrieve(empParty);
+		//qrInst.QuoteOwner.content = emp.IdentificationEmployeeID.EmployeeID.content.RemoveLeadingZeros();
+		//}
+		//}//FOREACH
+		//}//IF
+		//}//IF
+		//}//IF
+	
+		//}//ELSE
+	}
+}
+
+

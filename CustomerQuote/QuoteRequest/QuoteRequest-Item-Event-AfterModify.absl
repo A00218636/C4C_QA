@@ -1,0 +1,65 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: QuoteRequest
+		Node: Item
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+import AP.FO.ProductDataMaintenance.Global;
+import AP.Common.GDT as gdt;
+
+var abc : LANGUAGEINDEPENDENT_ENCRYPTED_SHORT_Name;
+var existingCount = this.ToRoot.Item.Count() * 10;
+
+this.ProdLineID = existingCount.ToString();
+
+this.LineID = Library::UUID.Generate().ToString();
+if (!this.Product.IsInitial())
+{
+	var prod = Material.Retrieve(this.Product);
+	if (prod.IsSet())
+	{
+		//----------Check for Generic Product------
+		if(prod.CrossProcessCategory.IsSet() && !prod.CrossProcessCategory.ProductCategoryIDKey.IsInitial())
+		{
+			var prodCategory = prod.CrossProcessCategory.ProductCategoryIDKey.ProductCategoryInternalID.RemoveLeadingZeros();
+			if(prodCategory == "Z0109")
+			{
+				raise MessageError.Create("E", "Generic Product" + this.Product.content.RemoveLeadingZeros() + " is not allowed in a Quote.");
+			}
+		}
+		//----------Check for Generic Product------
+
+		this.ToMaterial = prod;
+		var unit = prod.Common.BaseMeasureUnitCode;
+		if(this.Quantity.content==0)
+		{this.Quantity.content = 1;}
+		this.Quantity.unitCode = unit;
+		//this.ProductSQID.content = prod.Common.ZExtSKUID;
+		var idColl = prod.ObjectIdentifierMapping;
+			if (idColl.Count() > 0)
+			{
+				var remColl = idColl.Where(k => k.RemoteIdentifierDefiningSchemeCode == "20");
+				if (remColl.Count() > 0)
+				{
+					this.ProductSQID.content = remColl.GetFirst().RemoteObjectID.content;
+				}
+			}
+	}
+	
+	////Quantity Validation
+	//if(this.Quantity.content == 0)
+	//{
+	//raise MandatoryError.Create("E", "Please enter the Quantity.");
+	//}
+}
+

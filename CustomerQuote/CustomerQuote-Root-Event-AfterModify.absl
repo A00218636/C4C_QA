@@ -1,0 +1,35 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: CustomerQuote
+		Node: Root
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+//var count = 0;
+//var itemCount = this.Item.Count();
+//
+//foreach(var item in this.Item)
+//{
+	//var CategoryID = item.ItemProduct.ProductCategoryHierarchyProductCategoryIDKey.ProductCategoryInternalID.RemoveLeadingZeros();
+	//if(CategoryID == "Z0109")
+	//{
+		//item.Delete();
+		//count = count + 1;
+	//}
+	//
+	//if(CategoryID == "Z0109")
+	//{
+		//var lineCount = itemCount - count;
+		//var lineItem = lineCount * 10;
+	//}
+//}
+//

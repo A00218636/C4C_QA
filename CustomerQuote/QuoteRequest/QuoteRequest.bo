@@ -1,0 +1,86 @@
+﻿import AP.Common.GDT as apCommonGDT;
+import AP.FO.ProductDataMaintenance.Global;
+import AP.FO.BusinessPartner.Global;
+import AP.PDI.bo;
+
+businessobject QuoteRequest raises MsgError{
+
+        // Root node must not be specified, it is created implicitly
+        //
+        // Add elements here. 
+        // 
+        // To declare an element as alternative key, use the [AlternativeKey] annotation.
+        // Please note:
+        // - An alternative key of type UUID exists implicitly for each node, enabling the node
+        //   to be used as an association target.
+        // - The QueryByElements query is created automatically for each node.
+        // - Code completion is available with CTRL + SPACE.
+
+		[AlternativeKey]element QuoteReqID:ID;
+		element QuoteReference:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element CustomerQuoteID : BusinessTransactionDocumentID;
+		element Account:BusinessPartnerInternalID;
+		element AccountName : LANGUAGEINDEPENDENT_ENCRYPTED_LONG_Name;
+		element EndUser:BusinessPartnerInternalID;
+		element EndUserName : LANGUAGEINDEPENDENT_ENCRYPTED_LONG_Name;
+		element ShipToUnit:BusinessPartnerInternalID;
+		element ShipToUnitName : LANGUAGEINDEPENDENT_ENCRYPTED_LONG_Name;
+		element SalesOrg:OrganisationalCentreID;
+		element PrimaryContactName :LANGUAGEINDEPENDENT_ENCRYPTED_LONG_Name;
+		element OwnerName:LANGUAGEINDEPENDENT_ENCRYPTED_LONG_Name;
+		element OpportunityID : BusinessTransactionDocumentID;
+		element OpportunityName : ENCRYPTED_EXTENDED_Name;
+		element Total : Amount;
+
+		element Description:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element JobLocation:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element Comment:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		
+		element MarketSegment:MKTSGMTCode;
+		element Date:Date;
+		element ValidTo:Date;
+		element Currency:CurrencyCode;
+		element Status:LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element StatusCode :QuoteStatusCode;
+		element ProgressCode:QuoteProgressCode;
+		element Progress:LANGUAGEINDEPENDENT_SHORT_Name; 
+		element Progress_New: LANGUAGEINDEPENDENT_EXTENDED_Text;
+		element HybrisGenerated:Indicator;
+
+
+		element Assignee:EmployeeID;
+		element SubmittedFor:EmployeeID;
+		element SubmittedBy:EmployeeID;
+		element CurrUser:EmployeeID;
+		element QuoteOwner:EmployeeID;
+		element orgDetail : String;
+
+		[Transient] element displayError : Indicator;
+		[Transient] element validAccount : Indicator;
+		[Transient] element mandatoryIndicator : Indicator;
+		element compareIndicator : Indicator;
+		element displayPopup:Indicator;
+		element displayMessage:LONG_Description;
+		element duplicate_Account:BusinessPartnerInternalID;
+		node Item [0,n] raises MessageError,MandatoryError{
+
+		[AlternativeKey] element LineID:ID;
+		element ProdLineID:ID;
+		element Product:ProductInternalID;
+		element Quantity:Quantity;	
+		element ProductSQID :NOCONVERSION_ObjectID;
+
+		association ToMaterial [1,1] to Material;
+		message MessageError text "&1": LANGUAGEINDEPENDENT_EXTENDED_Text;
+		message MandatoryError text "&1": LANGUAGEINDEPENDENT_EXTENDED_Text;
+		}
+		node OrgDetails [0,n]{
+		 element orgID:OrganisationalCentreID;
+		}
+
+		action CreateQuote;
+		action DisplayQuoteRefNumber;
+		action Delete;
+		message MsgError text "&1": LANGUAGEINDEPENDENT_EXTENDED_Text;
+		//association ToCustomer [1,1] to Customer;
+}

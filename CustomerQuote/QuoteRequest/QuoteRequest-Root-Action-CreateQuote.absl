@@ -1,0 +1,390 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: QuoteRequest
+		Node: Root
+		Action: CreateQuote 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.PDI.bo;
+import AP.PDI.Utilities;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+import AP.FO.Activity.Global;
+
+//GENERATE GLOBAL ACCOUNT NUMBER FROM MOHAWK
+
+var contentType = "application/json";
+var headerParameter : collectionof NameAndValue;
+var urlParam : collectionof NameAndValue;
+var urlParametrEntry : NameAndValue;
+var headerParameterPreHook : NameAndValue;
+var headerParameterPostHook : NameAndValue;
+var headerParameterContLang : NameAndValue;
+var headerParameterAccptJson : NameAndValue;
+
+	
+headerParameterPreHook.Name = "Pre-Persist-Hook";
+headerParameterPreHook.Value = "custFlooringNaC4CQuoteInboundPrePersistHook";
+headerParameter.Add(headerParameterPreHook);
+
+headerParameterPostHook.Name = "Post-Persist-Hook";
+headerParameterPostHook.Value = "custFlooringNaC4CQuoteInboundPostPersistHook";
+headerParameter.Add(headerParameterPostHook);
+
+headerParameterContLang.Name = "Content-Language";
+headerParameterContLang.Value = "en";
+headerParameter.Add(headerParameterContLang);
+
+headerParameterAccptJson.Name = "Accept";
+headerParameterAccptJson.Value = "application/json";
+headerParameter.Add(headerParameterAccptJson);
+
+
+var scenarioName = "HybrisRequestCS";
+var serviceName = "HybrisRequest";
+var httpMethod = "POST";
+var httpResource = "";
+
+
+
+//var query = BusinessPartner.QueryByIdentification;
+//
+//var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.InternalID, "I", "EQ", this.SubmittedFor.content.RemoveLeadingZeros());
+//// Result
+//resultData = query.ExecuteDataOnly(selectionParams);
+
+
+var emp = BusinessPartner.Retrieve(this.SubmittedFor.content.RemoveLeadingZeros());
+var empEmail;
+if (emp.IsSet())
+{
+	//SAVE EMAIL AS LOWER-CASE
+	if (emp.CurrentDefaultIsContactPersonFor.IsSet())
+	{
+		if (emp.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.IsSet())
+		{
+			if (emp.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+			{
+				if (emp.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+				{
+					if (emp.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+					{
+						var workAdd = emp.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress;
+						
+						if (workAdd.DefaultEMail.IsSet())
+						{
+							empEmail = workAdd.DefaultEMail.URI.content.ToLowerCase();
+							
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+//GET OWNER EMAIL
+var owner;
+var empID : Employee.Identification.EmployeeID;
+empID.content = this.QuoteOwner.content;
+var ownerEmp = Employee.Identification.Retrieve(empID);
+var OwnerParent = ownerEmp.ToParent;
+var address2 = ownerEmp.ToParent.CurrentCommon;
+var ownerEmail;
+
+if (ownerEmp.IsSet())
+{
+	if (OwnerParent.CurrentDefaultEmployeeWorkplaceAddressInformation.IsSet())
+	{
+		if (OwnerParent.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.IsSet())
+		{
+			if (OwnerParent.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.IsSet())
+			{    
+				ownerEmail = OwnerParent.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.URI.content;
+			}
+		}
+	}
+}
+
+//GET CURRENT USER, SUBMITTED FOR
+var current_emp_uuid = Context.GetCurrentIdentityUUID();
+var current_employee_name;
+var currID : Employee.Identification.EmployeeID;
+var bupa_id;
+var empBP;
+var email;
+var a12;
+var pemail;
+if (!current_emp_uuid.content.IsInitial())
+{
+	bupa_id = Identity.Retrieve(current_emp_uuid).BusinessPartnerUUID;	//Check for LoggedIn User
+	a12 = Identity.Retrieve(current_emp_uuid).Person.InternalID;
+	empBP = BusinessPartner.Retrieve(bupa_id);
+}
+var currUseremp = Employee.Retrieve(bupa_id);//.AddressSnapshot.DefaultEMail.NormalisedURI.content;
+var currEmailN;
+var currEmail;
+var empResp;
+if (currUseremp.IsSet())
+{
+	if (currUseremp.CurrentDefaultEmployeeWorkplaceAddressInformation.IsSet())
+	{
+		empResp = currUseremp.CurrentDefaultEmployeeWorkplaceAddressInformation;
+		
+		if (empResp.EmployeeWorkplaceAddressWorkplaceAddress.IsSet())
+		{
+			currEmail = empResp.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.URI.content;
+		}
+	}
+}
+var currUser;
+
+//GET GAN OF END-USER, ACCOUNT AND SHIP-TOs.
+var st = this.ShipToUnit;
+var acc = this.Account;
+var euu= this.EndUser;
+var Zcust = Customer.Retrieve(this.Account.RemoveLeadingZeros());
+var accGAN;
+if (Zcust.IsSet())
+{
+	var custCommon = Zcust.Common;
+	
+	if (custCommon.GetFirst().IsSet())
+	{
+
+		accGAN = custCommon.GetFirst().ZGAN;
+	}
+}
+
+var shipTo = Customer.Retrieve(this.ShipToUnit.RemoveLeadingZeros());
+var shipGAN;
+if (shipTo.IsSet())
+{
+	var custCommon = shipTo.Common;
+	
+	if (custCommon.GetFirst().IsSet())
+	{
+
+		shipGAN = custCommon.GetFirst().ZGAN;
+	}
+}
+
+var endUser = Customer.Retrieve(this.EndUser.RemoveLeadingZeros());
+var euGAN;
+if (endUser.IsSet())
+{
+	var custCommon = endUser.Common;
+	
+	if (custCommon.GetFirst().IsSet())
+	{
+
+		euGAN = custCommon.GetFirst().ZGAN;
+	}
+}
+
+
+
+var prod = "";
+var extID = "";
+var totalPrice = "";
+
+var itemCount = this.Item.Count();
+var count = 0;
+
+foreach (var itm in this.Item)
+{
+	count = count + 1;
+	//Query product UoM
+	
+	var result;
+	var catQuery = UOM_BCO.QueryByElements;
+	var catSelectionParams = catQuery.CreateSelectionParams();
+	catSelectionParams.Add(catQuery.C4CUOM, "I", "EQ", itm.Quantity.unitCode);
+	var repResultData = catQuery.Execute(catSelectionParams);
+	var camsUoM;
+	if (repResultData.Count() > 0)
+	{
+		camsUoM = repResultData.GetFirst().CAMSUOM;
+				
+	}
+	//Make quantity whole no
+	var qtPos = itm.Quantity.content.ToString().Find(".0000");
+	var qtLen = itm.Quantity.content.ToString().Length();
+
+	var quantity = itm.Quantity.content.ToString().Substring(0, qtPos);
+
+	prod = prod +
+	"{" +
+"\"unit\"" + ":" + "{" +
+
+"\"code\"" + ":" + "\"" + camsUoM + "\"" + 
+"}" + "," + 
+"\"entryNumber\"" + ":" + Numeric.RoundToString(count*10,0) + "," + 
+//"\"entryNumber\"" + ":" + itm.ProdLineID.RemoveLeadingZeros() + "," + 
+"\"totalPrice\"" + ":" + "\"0.00\"" + "," +
+"\"c4cItemId\"" + ":" + "\"" + itm.ProductSQID.content + "\"" + "," + 
+ "\"quantity\"" + ":" + "\"" + quantity + "\"" +  
+	
+ "}" + ",";
+	if (count == itemCount)
+	{
+		var len = prod.Length();
+		prod = prod.Substring(0, len - 1);
+
+	}
+}
+
+// Expiry Date
+//var time = Context.GetCurrentSystemDateTime().ConvertToGlobalDateTime().GetTime().ToString();
+var dateCount = this.ValidTo.ConvertToGlobalDateTime().ToString().Length();
+dateCount = dateCount - 10;
+var dateBody = this.ValidTo.ConvertToGlobalDateTime().ToString().Substring(0, dateCount);
+// Current Date
+var dateCountCurrent = this.Date.ConvertToGlobalDateTime().ToString().Length();
+dateCountCurrent = dateCountCurrent - 9;
+var CurrentdateBody = this.Date.ConvertToGlobalDateTime().ToString().Substring(0, dateCountCurrent);
+
+var body = "{" +
+"\"totalPrice\"" + ":" + "\"0.00\"" + "," +
+"\"logicalSystemID\"" + ":" + "\"Q5ECLNT004\"" + "," +
+  
+ "\"version\"" + ":" + "1" + "," +
+"\"comment\"" + ":" + "\"" + this.Comment + "\"" + "," +
+"\"endUserCode\"" + ":" + "\"" + euGAN + "\"" + "," +
+ "\"jobLocation\"" + ":" + "\"" + this.JobLocation + "\"" + "," +
+"\"marketSegment\"" + ":" + "\"" + this.MarketSegment.GetDescription() + "\"" + "," +
+"\"processingTypeCode\"" + ":" + "\"ZAG\"" + "," +
+//"\"quoteExpirationDate\"" + ":" + "\"2021-05-24T00:00:00\"" + "," +
+"\"quoteExpirationDate\"" + ":" + "\"" + dateBody+"T23:59:59" + "\"" + "," +
+ "\"c4cCpiSalesOrganization\"" + ":" + "\"" + this.SalesOrg + "\"" + "," +
+"\"c4cCpiDivision\"" + ":" + "\"1\"" + "," +
+"\"description\"" + ":" + "\"" + this.Description + "\"" + "," +
+"\"shipToUnit\"" + ":" + "\"" + shipGAN + "\"" + "," +
+ "\"c4cCpiDistributionChannel\"" + ":" + "\"01\"" + "," +
+//"\"date\"" + ":" +"\"2021-04-24T14:39:56\"" + "," +
+"\"date\"" + ":" + "\"" + CurrentdateBody +Context.GetCurrentSystemDateTime().ConvertToGlobalDateTime().GetTime().ToString()+ "\"" + "," +
+"\"unit\"" + ":" + "{" + 
+"\"uid\"" + ":" + "\"" + accGAN + "\"" + 
+"}" + "," +
+"\"currency\"" + ":" + "{" + 
+"\"isocode\"" + ":" + "\"" + this.Currency + "\"" + 
+"}" + "," +
+"\"assignee\"" + ":" + "{" + 
+"\"uid\"" + ":" + "\"" + currEmail + "\"" + 
+"}" + "," +
+"\"user\"" + ":" + "{" + 
+"\"uid\"" + ":" + "\"" + currEmail + "\"" + 
+"}" + "," +
+"\"submittedBy\"" + ":" + "{" + 
+"\"uid\"" + ":" + "\"" + currEmail + "\"" + 
+"}" + "," +
+ "\"submittedFor\"" + ":" + "{" + 
+"\"uid\"" + ":" + "\"" + empEmail + "\"" +
+"}" + "," +
+"\"quoteOwner\"" + ":" + "{" + 
+"\"uid\"" + ":" + "\"" + ownerEmail + "\"" + 
+"}" + "," +
+ "\"c4cQuoteExternalQuoteId\"" + ":" + "\"000\"" + "," +
+"\"quoteEntries\"" + ":" + "[" + 
+	prod +
+	"]" +
+"}";
+	 
+//+ string(") then \" for inserting double quote ----------"\"version\"" + ":" + "\"1\"" + "," +
+//"\"entryNumber\"" + ":" + "\"" + itm.ID.RemoveLeadingZeros() + "\"" + "," + 
+
+var t = "";
+t=body;
+//Accept : application/json
+var ws_result = WebServiceUtilities.ExecuteRESTService(scenarioName, serviceName, httpMethod, httpResource, urlParam, headerParameter, contentType, body);
+
+this.displayError = true; //Error will display
+if(!ws_result.IsInitial())
+{
+if (ws_result.Code == "200" || ws_result.Code == "201 " || ws_result.Code == "202 " || ws_result.Code == "204" || ws_result.Code == "201")
+{
+	var keys : collectionof String;
+	var key;
+	var jsonString = ws_result.Content;
+	//var result1 = ws_result.ContentType;
+	var Result : JsonResult;
+	var result2 = ws_result.Code;
+
+	key = "d.code";
+	keys.Add(key);
+
+	if (Json.IsValidJson(jsonString))
+	{
+		Result = Json.ParseKeyValues(keys, jsonString);			
+	}
+
+	if (!Result.IsInitial() && !Result.KeyValue.GetFirst().IsInitial() && Result.KeyValue.GetFirst().Error == false)
+	{
+		this.QuoteReference = Result.KeyValue.GetFirst().Value;
+		this.displayError = false;
+	}
+	else
+	{
+		this.displayError = true;
+	}
+}
+}
+
+
+//SEND EMAIL
+
+
+//EmailActivity: Root node
+
+var elEmailRoot : elementsof EmailActivity;
+
+var instEmail;
+
+// EmailActivity: define party node
+
+var elEmailParty : elementsof EmailActivity.Party;
+
+var instParty;
+
+var TXT_TYPE_BODY_TEXT = "10002";
+
+var elEmailTxtCollTxt: elementsof EmailActivity.TextCollection.Text;
+
+var elEmailTxtCollTxtCntnt: elementsof EmailActivity.TextCollection.Text.TextContent;
+
+var instEmailTxtColl;
+
+var instEmailTxtCollTxt;
+
+elEmailRoot.Name.content = this.QuoteReference; //Here comes the title of the email
+
+instEmail = EmailActivity.Create(elEmailRoot);
+
+elEmailParty.PartyKey.PartyID.content = "shivakumar_thota@mohawkind.com";
+
+
+instEmail.MessageToParty.Create(elEmailParty);
+
+
+instEmailTxtColl = instEmail.TextCollection.Create();
+
+elEmailTxtCollTxt.TypeCode.content = TXT_TYPE_BODY_TEXT;
+
+instEmailTxtCollTxt = instEmailTxtColl.Text.Create(elEmailTxtCollTxt);
+
+elEmailTxtCollTxtCntnt.Text.content = prod;
+
+instEmailTxtCollTxt.TextContent.Create(elEmailTxtCollTxtCntnt);
+
+instEmail.Send();

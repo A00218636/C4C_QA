@@ -1,0 +1,184 @@
+/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: QuoteRequest
+		Node: Root
+		Event: AfterModify 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script if:
+		- the value of any field in the node in which this script is contained is modified.
+		- the node itself is modified by another business object within the same solution.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.CRM.Global;
+import AP.FO.MOM.Global;
+import AP.PC.IdentityManagement.Global;
+
+//Automatic Quote ID Generation
+if (this.QuoteReqID.IsInitial())
+{
+	this.QuoteReqID = "QT" + NumberRange.DrawNumber("QTID").ToString();
+}
+
+//Clear Primary Contact Name based on Account
+if(this.Account.IsInitial() && !this.SubmittedFor.IsInitial())
+{
+	this.SubmittedFor.Clear();
+}
+
+//Copy Account to ShipTo initially
+//if (!this.Account.IsInitial() && this.ShipToUnit.IsInitial())
+if (!this.Account.IsInitial())
+{
+	this.ShipToUnit = this.Account;	
+}
+
+var accntInst;
+//----Fetch Account Name / Invoicing Account ------
+if(this.compareIndicator == false) 
+{
+	if (!this.Account.IsInitial())
+	{
+		accntInst = Customer.Retrieve(this.Account);
+		this.duplicate_Account = this.Account;
+		this.compareIndicator = true;
+		//Account Name
+		if (accntInst.IsSet() && accntInst.CurrentCommon.IsSet())
+		{
+			this.AccountName = accntInst.CurrentCommon.BusinessPartnerFormattedName;
+		}
+		//Primary Contact (Submittedfor)
+		if (accntInst.IsSet() && accntInst.CurrentDefaultHasContactPerson.IsSet() && this.SubmittedFor.IsInitial())
+		{
+			this.SubmittedFor.content = accntInst.CurrentDefaultHasContactPerson.RelationshipBusinessPartnerInternalID;
+		}
+
+		////Invoicing Account - CRM000
+		//if (accntInst.IsSet() && accntInst.CustomerRole.IsSet() && !accntInst.CustomerRole.RoleCode.IsInitial())
+		//{
+			//if (accntInst.CustomerRole.RoleCode.content == "CRM000")
+			//{
+				//this.validAccount = true;
+			//}
+		//}
+	}
+}
+else
+{
+	if (!this.Account.IsInitial())
+	{
+		accntInst = Customer.Retrieve(this.Account);
+		if(this.duplicate_Account != this.Account)
+		{
+			this.duplicate_Account = this.Account;
+			this.SubmittedFor.Clear();
+			//Account Name
+			if (accntInst.IsSet() && accntInst.CurrentCommon.IsSet())
+			{
+				this.AccountName = accntInst.CurrentCommon.BusinessPartnerFormattedName;
+			}
+			//Primary Contact (Submittedfor)
+			if (accntInst.IsSet() && accntInst.CurrentDefaultHasContactPerson.IsSet() && this.SubmittedFor.IsInitial())
+			{
+				this.SubmittedFor.content = accntInst.CurrentDefaultHasContactPerson.RelationshipBusinessPartnerInternalID;
+			}
+		}
+		////Invoicing Account - CRM000
+		//if (accntInst.IsSet() && accntInst.CustomerRole.IsSet() && !accntInst.CustomerRole.RoleCode.IsInitial())
+		//{
+			//if (accntInst.CustomerRole.RoleCode.content == "CRM000")
+			//{
+				//this.validAccount = true;
+			//}
+		//}
+	}
+}
+
+//Invoicing Account - CRM000
+if (accntInst.IsSet() && accntInst.CustomerRole.IsSet() && !accntInst.CustomerRole.RoleCode.IsInitial())
+{
+	if (accntInst.CustomerRole.RoleCode.content == "CRM000")
+	{
+		this.validAccount = true;
+	}
+}
+
+// End User Name / Ship To Name
+if(!this.EndUser.IsInitial() || !this.ShipToUnit.IsInitial())
+{
+	var enduserInst = Customer.Retrieve(this.EndUser);
+	var shiptoInst = Customer.Retrieve(this.ShipToUnit);
+
+	//End User Name
+	if (enduserInst.IsSet() && enduserInst.CurrentCommon.IsSet())
+	{
+		this.EndUserName = enduserInst.CurrentCommon.BusinessPartnerFormattedName;
+	}
+
+	//Ship To Unit Name
+	if (shiptoInst.IsSet() && shiptoInst.CurrentCommon.IsSet())
+	{
+		this.ShipToUnitName = shiptoInst.CurrentCommon.BusinessPartnerFormattedName;
+	}
+}
+
+//Primary Contact Name 
+if (!this.SubmittedFor.IsInitial())
+{
+	var PrimaryCN = BusinessPartner.Retrieve(this.SubmittedFor.RemoveLeadingZeros().content);
+	if (PrimaryCN.IsSet()) { this.PrimaryContactName = PrimaryCN.CurrentCommon.BusinessPartnerFormattedName; }	
+}
+
+//Owner Contact Name
+var QuoteOwnerEmp;
+if (this.QuoteOwner.IsInitial())
+{
+	var identityUUID = Context.GetCurrentIdentityUUID();
+	if (!identityUUID.IsInitial())
+	{
+		var currentIdentity = Identity.Retrieve(identityUUID);
+		if (currentIdentity.IsSet())
+		{
+			var CurrentEmp = Employee.Retrieve(currentIdentity.BusinessPartnerUUID);
+			if (CurrentEmp.IsSet())
+			{
+				this.QuoteOwner = CurrentEmp.IdentificationEmployeeID.EmployeeID.RemoveLeadingZeros();
+			}
+		}
+	}
+}
+if (!this.QuoteOwner.IsInitial())
+	QuoteOwnerEmp = Employee.Identification.Retrieve(this.QuoteOwner);
+if (QuoteOwnerEmp.IsSet() && QuoteOwnerEmp.ToParent.IsSet() && QuoteOwnerEmp.ToParent.CurrentCommon.IsSet())
+{
+	this.OwnerName = QuoteOwnerEmp.ToParent.CurrentCommon.ToParent.CurrentCommon.BusinessPartnerFormattedName;
+}
+
+//Date Validation
+if (this.Date.IsInitial())
+{
+	this.Date = Context.GetCurrentUserDate();
+}
+
+if (this.ValidTo.IsInitial())
+{
+	this.ValidTo = this.Date.AddDuration(Library::Duration.ParseFromString("P30D"));
+}
+
+//Currency
+if (this.Currency.IsInitial())
+{
+	this.Currency = "USD";
+}
+
+//DEFAULT SALES UNIT
+if(this.SalesOrg.IsInitial())
+{
+  this.SalesOrg = "COM";
+
+}

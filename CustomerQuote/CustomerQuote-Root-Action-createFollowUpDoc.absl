@@ -1,0 +1,245 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: CustomerQuote
+		Node: Root
+		Action: createFollowUpDoc 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	   
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.Common.GDT;
+import AP.PC.IdentityManagement.Global;
+
+
+var current_emp_uuid = Context.GetCurrentIdentityUUID();
+var current_employee_name;
+var bupa_id;
+if (!current_emp_uuid.content.IsInitial())
+{
+	bupa_id = Identity.Retrieve(current_emp_uuid).ID.content;		//Check for LoggedIn User
+}
+
+//Rplication of Quote to Hybris
+if (bupa_id != "_XCHANGE")
+{
+	var req : Library::QuoteToHybris.Quote_C4C.Request;
+	if (this.BuyerParty.BusinessPartner.IsSet())
+	{
+		var buyerParty = this.BuyerParty;
+		var RoleCode = buyerParty.BusinessPartner.Role.GetFirst().RoleCode;
+		if (RoleCode.content == "CRM000")
+		{
+			
+			//req.QuoteVersion = this.VersionID;
+			//req.c4cCpiDistributionChannel = "01";
+
+			//Query Account External ID
+			var account = Customer.Retrieve(buyerParty.PartyUUID);
+			var common;
+			if (account.IsSet())
+			{
+				common = account.Common.GetFirst();
+				//req.AccountExternalID = common.ZCustID;
+				req.AccountExternalID = common.ZGAN;
+			}
+
+			//Query End User
+			var endUser = this.Party.Where(k => k.RoleCode == "Z061");
+			if (endUser.Count() > 0)
+			{
+				req.endUserCode = endUser.GetFirst().Customer.Common.GetFirst().ZGAN;
+			}
+			//req.AccountExternalID = "Query Account External ID";
+
+			var shipTo = this.Party.Where(k => k.RoleCode == "1005");
+			if (shipTo.Count() > 0)
+			{
+				//req.shipToUnit =  shipTo.GetFirst().Customer.Common.GetFirst().ZCustID;
+				req.shipToUnit = shipTo.GetFirst().Customer.Common.GetFirst().ZGAN;
+			}
+			
+			req.jobLocation = this.ZPROJLOC;
+			
+			if (this.SalesAndServiceBusinessArea.IsSet())
+			{
+				req.c4cCpiSalesOrganization = this.SalesAndServiceBusinessArea.SalesOrganisationID; 
+				req.c4cCpiDivision = this.SalesAndServiceBusinessArea.DivisionCode.content;
+			}
+
+		
+			var personUUID = this.CreationIdentity.UUID;
+			var emp = Identity.Retrieve(personUUID);
+			
+			//req.CreatedBy = emp.CurrentDefaultAddressInformation.Address.DefaultEMail.URI.content;
+			var bpUUID = emp.BusinessPartnerUUID;
+			var empIn = Employee.Retrieve(bpUUID);
+		
+			if (empIn.CurrentDefaultEmployeeWorkplaceAddressInformation.IsSet())
+			{
+				req.CreatedBy = empIn.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.URI.content;
+			}//req.CreatedBy = emp.Person.AddressInformation.Address.DefaultEMail.GetFirst().URI.content;
+			//if(this.TextCollection.IsSet())
+			if (this.TextCollection.TextByTextTypeCodeAndLanguageCode.GetFirst().IsSet())
+			{			
+				//if (this.TextCollection.TextByTextTypeCodeAndLanguageCode.GetFirst().TextContent.IsSet())
+				//{			
+				var intExtComm = "";
+				foreach (var comments in this.TextCollection.TextByTextTypeCodeAndLanguageCode)
+				{
+					intExtComm = intExtComm + comments.TextContent.Text.content;
+				}
+				req.CustomerComment = intExtComm;
+			}
+			
+		}
+		if (!this.Name.IsInitial())
+		{
+			req.description = this.Name.content;
+		}
+	
+		var systemUrl = Context.GetSystemURL();
+		if (systemUrl.Contains("351008") || systemUrl.Contains("351458"))
+		{
+			req.LogicalSystemID = "Q5ECLNT004";
+		}
+
+		if (this.PricingTerms.IsSet())
+		{
+			req.Currency = this.PricingTerms.CurrencyCode;
+		}
+
+		if (this.TotalValues.IsSet())
+		{
+			if (!this.TotalValues.NetAmount.IsInitial())
+			{
+				req.NetAmount = this.TotalValues.NetAmount.content.ToString();
+			}
+		}
+		var dateTime = this.SystemAdministrativeData.CreationDateTime.ToString();
+		//req.Date = this.SystemAdministrativeData.CreationDateTime.ToString();
+		// cut off time suffix (starts with "T")
+		var localDateStr = dateTime.Substring(0, dateTime.Find("Z"));
+		var localDateString = dateTime.Substring(0, 19);
+
+		//req.Date = localDateStr;
+		req.CreatedOnDate = localDateString;
+
+
+		//Query Submitted For or Primary Contact
+		if (this.BuyerParty.IsSet())
+		{
+			var contact = BusinessPartner.Retrieve(this.BuyerParty.MainPartyContactParty.PartyUUID);
+			if (contact.CurrentDefaultIsContactPersonFor.IsSet())
+			{
+				if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.IsSet())
+				{
+					if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.IsSet())
+					{
+						if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.IsSet())
+						{
+							if (contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress.IsSet())
+							{
+								var workAdd = contact.CurrentDefaultIsContactPersonFor.BusinessPartnerRelationship.ContactPerson.ContactPersonWorkplaceAddressInformation.ContactPersonWorkplaceAddress;
+						
+								if (workAdd.DefaultEMail.IsSet())
+								{
+									req.PrimaryContact = workAdd.DefaultEMail.URI.content;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		var currUserUUID = this.LastChangeIdentity.BusinessPartnerUUID;
+		
+		var currUserInfo = Employee.Retrieve(currUserUUID);
+		
+		if (currUserInfo.IsSet())
+		{
+			if (currUserInfo.CurrentDefaultEmployeeWorkplaceAddressInformation.IsSet())
+			{
+				if (currUserInfo.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.IsSet())
+				{
+					if (currUserInfo.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.IsSet())
+					{
+					  req.CurrentUser = currUserInfo.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.URI.content;
+					}
+		
+				}
+		  
+			}
+		}
+			
+ 
+		req.c4cQuoteExternalQuoteId = this.ID.RemoveLeadingZeros().content;
+		req.ZmarketSegment = this.ZMarketSegment;
+
+		if (this.ValidityPeriod.IsSet())
+		{
+			req.quoteExpirationDate = this.ValidityPeriod.TimePointPeriod.EndTimePoint.Date.ToString();
+		}
+		if (this.EmployeeResponsibleParty.IsSet())
+		{
+			if (this.EmployeeResponsibleParty.Employee.CurrentDefaultEmployeeWorkplaceAddressInformation.IsSet())
+			{
+				if (this.EmployeeResponsibleParty.Employee.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.IsSet())
+				{
+					if (this.EmployeeResponsibleParty.Employee.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.IsSet())
+					{
+						req.QuoteOwner = this.EmployeeResponsibleParty.Employee.CurrentDefaultEmployeeWorkplaceAddressInformation.EmployeeWorkplaceAddressWorkplaceAddress.DefaultEMail.URI.content;
+        
+					}
+			
+				}
+		  
+			}
+		}
+		 		
+		
+		var node : collectionof Library::QuoteToHybris.Quote_C4C.Request;
+		foreach (var prod in this.Item)
+		{
+			var c1 = node.GetFirst().Product.GetFirst();
+			c1.entryNumber = prod.ID.RemoveLeadingZeros();
+			c1.c4cItemId = prod.ItemProduct.Material_V1.Common.ZSKUExtID.content;
+			var idColl = prod.ItemProduct.Material_V1.ObjectIdentifierMapping;
+			if (idColl.Count() > 0)
+			{
+				var remColl = idColl.Where(k => k.RemoteIdentifierDefiningSchemeCode == "935");
+				if (remColl.Count() > 0)
+				{
+					c1.c4cItemId = remColl.GetFirst().RemoteObjectID.content;
+				}
+			}
+			c1.Quantity = prod.FirstRequestedItemScheduleLine.Quantity.content.ToString();	
+			var qty = prod.FirstRequestedItemScheduleLine.Quantity.content.ToString();	
+	
+			var qtyWholeNo = qty.Substring(0, qty.Find("."));
+			c1.Quantity = qtyWholeNo;
+			c1.UnitOfMeasure = prod.FirstRequestedItemScheduleLine.Quantity.unitCode;
+
+			
+			if (prod.PriceDocumentPriceAndTaxCalculationItem.ItemMainTotal.IsSet())
+			{
+				c1.totalPrice = prod.PriceDocumentPriceAndTaxCalculationItem.ItemMainTotal.CalculatedAmount.content.ToString();
+			}
+			req.Product.Add(c1);
+		}
+			
+		var response = Library::QuoteToHybris.Quote_C4C(req, " ", "QuoteToHybrisCS");
+		if (response.CommunicationFault.IsInitial())
+		{
+			//this.
+		
+		
+		
+		}		
+	}											
+}					

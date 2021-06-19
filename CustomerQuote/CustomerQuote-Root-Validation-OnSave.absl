@@ -1,0 +1,82 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: CustomerQuote
+		Node: Root
+		Validation: OnSave 
+
+		Script file signature
+		----------------------------
+		Returns: Boolean
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script before an instance of the business object is saved to the data base.
+		It can have a return value of either true or false, which determines whether the instance of the business object is saved or not.
+		All fields in this business object are read-only and cannot be changed.
+*/
+
+import ABSL;
+import AP.FO.Product.Global;
+import AP.FO.BusinessPartner.Global;
+
+var errorCount = 0;
+if (this.TypeCode != "2059")        // Validation to be triggred for Quote
+{
+	if (this.Item.Count() > 0)		//Check for Generic items
+	{
+		foreach (var i in this.Item)
+		{
+			var catID = i.ItemProduct.ProductCategoryHierarchyProductCategoryIDKey.ProductCategoryInternalID.RemoveLeadingZeros();
+			if (catID == "Z0109" && this.ZSDK_ProductValid == false)  //Commented based on ItemProduct Script
+			//if (catID == "Z0109")
+			{
+				raise MandatoryError.Create("E", ": Generic Product " + i.ItemProduct.ProductKey.ProductID.content + " is not allowed in a Quote.");
+				errorCount = errorCount + 1;	
+			}	     
+		}
+	}
+
+	var accId;
+	var account;
+	var AccountBP = this.BuyerParty.Customer.Common.GetFirst();
+	var RoleCode = this.BuyerParty.BusinessPartner.Role.GetFirst().RoleCode;
+
+	if (AccountBP.IsSet())
+	{
+		if (AccountBP.ZBusinessType != "111")       // Chek for Business Type Commercial - 111
+		{
+			raise MandatoryError.Create("E", ": Please select a commercial account");
+			errorCount = errorCount + 1;
+		}
+		if (RoleCode.content != "CRM000")    		//Check for Role Invoicing - CRM000
+		{
+			raise MandatoryError.Create("E", ": Please select an invoicing account");
+			errorCount = errorCount + 1;
+		}
+	}	
+	var currentDate = Context.GetCurrentSystemDate();
+	var validTo = this.ValidityPeriod.TimePointPeriod.EndTimePoint.Date.GreaterThan(currentDate);
+	var currUser = Library::LoggedInUser.GetCurrentUserID();
+	
+	if (validTo == false && currUser!="_CPI" && currUser!="_HYBRIS" && currUser!="_ODATA_HYBRI")
+	{
+		raise MandatoryError.Create("E", "Quote is expired. Please change the Valid to Date before changing the status");
+		errorCount = errorCount + 1; 
+	}
+	if (errorCount > 0)
+	{
+		return false;
+	}
+
+	else
+	{
+		return true;
+	}
+}
+else
+{
+	return true;
+}
+

@@ -1,0 +1,88 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: QuoteRequest
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import AP.FO.BusinessPartner.Global;
+import AP.FO.MOM.Global;
+import AP.PC.IdentityManagement.Global;
+import AP.PDI.bo;
+
+var dev;
+dev = Context.GetSystemURL().Contains("351008");
+//Create Quote in C4C
+//if (dev == false)
+//{
+	if (this.QuoteReference.IsInitial() && this.HybrisGenerated == false)
+	{
+		this.CreateQuote();
+	}
+//}
+//else
+//{
+	//this.QuoteReference = "6776612212";
+	//this.displayError = false;
+	//this.mandatoryIndicator = false;
+	//this.HybrisGenerated = true;
+//}
+//
+//Mandatory Condition
+this.mandatoryIndicator = false;
+var itemCount = this.Item.Count();
+
+var currUser = Library::LoggedInUser.GetCurrentUserID();
+if (currUser != "_CPI")
+{
+	if (this.Account.IsInitial() || this.EndUser.IsInitial() || this.JobLocation.IsInitial() || this.SalesOrg.IsInitial() || this.MarketSegment.IsInitial() || this.ShipToUnit.IsInitial() || this.Currency.IsInitial() || this.Date.IsInitial() || this.ValidTo.IsInitial() || this.QuoteOwner.IsInitial() || this.SubmittedFor.IsInitial() || itemCount == 0)
+	{
+		this.mandatoryIndicator = true;
+	}
+}
+
+
+// Set Team of logged in User 
+var abcemp = LoggedInUser.GetEmpTeam();
+var logg = LoggedInUser.GetLoggedInUserEMPID();
+var identityUUID = Context.GetCurrentIdentityUUID();
+var identity = Identity.Retrieve(identityUUID);
+var employee = Employee.Retrieve(identity.BusinessPartnerUUID);
+var result;
+var CurrentOrg : collectionof OrganisationalUnit.EmployeeAssignment;
+
+if (employee.IsSet())
+{
+	var empOrg;
+	var empDetails : String;
+	var sep;
+	sep = ",";
+	result = employee.IdentificationEmployeeID.EmployeeID.RemoveLeadingZeros();
+	CurrentOrg = employee.OrganisationalUnitAssignment;
+	foreach (var org in CurrentOrg)
+	{
+
+		if (org.ValidityPeriod.EndDate.GreaterThan(this.Date))
+		{
+			empOrg = org.ToParent.ID; 
+			empDetails = empOrg + sep + empDetails;
+		}
+		this.orgDetail = empDetails;
+	}
+}
+//var gtime = Context.GetCurrentSystemDateTime().ConvertToGlobalDateTime();
+//
+//var hour = gtime.GetHour();
+//var min = gtime.GetMinute();
+//var sec = gtime.GetSecond();
+//var getTime = Context.GetCurrentSystemDateTime().ConvertToGlobalDateTime().GetTime().ToString();
+//var contime = hour + ":" + min + ":" + sec;
