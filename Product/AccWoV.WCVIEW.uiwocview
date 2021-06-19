@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?><UXComponent xmlns:base="http://www.sap.com/a1s/cd/oberon/base-1.0" xmlns:uxv="http://www.sap.com/a1s/cd/oberon/uxview-1.0" xmlns:uxc="http://www.sap.com/a1s/cd/oberon/uxcontroller-1.0" id="2sQF0oQSlKcrkgcnRbs2vG" enableBackendOperationsClubbing="true" name="AccWoV.WCVIEW.uiwocview" wocViewSubType="InvisibleApplication" AuthorizationClassificationCode="ApplicationContainer" useUIController="true" helpId="cd460488-ac7a-4c1e-af04-c890a3156e9d" designtimeVersion="5.13.0.12" modelVersion="1.0" xmlns="http://www.sap.com/a1s/cd/oberon/uxcomponent-1.0">
+
+  <uxc:Interface id="Ga$d0eHeuqkflAoqcayxjm">
+  <uxc:Configuration id="AkofilRp9K2cMpw20XUqAm"/>
+</uxc:Interface>
+  <uxc:Implementation id="YTeF2EEfRKg6owDJ4kRs_W">
+   <uxc:DataModel id="n5v8bbSNN4_5W7uubXdgsW" name="Root">
+      <base:PropertyBag id="$m67ZOJuXaEIUhK_KgJmw0">
+      <base:Property id="lHeiCsE7fKgtVcN1zxMAb0" name="USERCHANGEDNAME" value="True"/>
+      <base:Property id="uGue_sKHA4EeGktfNseUEW" name="BINDINGSTATUS" value="ToBind"/>
+    </base:PropertyBag>
+     <uxc:DataField id="MREnWdxi6qQq8DoXSpCze0" name="@ErrorOccured" type="boolean">
+       <base:PropertyBag id="TLIvjwrOZKEFCQPUHgGTLm">
+        <base:Property id="_uIw46T$zKUwwp4S5BNNHm" name="BINDINGSTATUS" value="Internal"/>
+      </base:PropertyBag>
+    </uxc:DataField>
+    <uxc:DataField id="mK$XCgYAoqYAMb878W6Kl0" name="@TransitionErrorOccurred" type="string">
+      <base:PropertyBag id="9dC7wpKDhq_Z49k5WCxvB0">
+        <base:Property id="vYEoh4or04EhlGOEJdoUWG" name="BINDINGSTATUS" value="Internal"/>
+      </base:PropertyBag>
+    </uxc:DataField>
+     <uxc:Structure id="BHKpI7$8qq_1560Z3jt0$m" name="$System">
+       <base:PropertyBag id="t8UbxYjDPaQ2BQ5ar2GGTG">
+        <base:Property id="7D4Ls$I1l420JJ6sBS7CSW" name="BINDINGSTATUS" value="Internal"/>
+      </base:PropertyBag>
+       <uxc:DataField id="u4F73vLo44QXfjIO_e85AW" name="SessionUrl" type="string">
+         <base:PropertyBag id="hKr2E$1nma249sGxxeF0GW">
+          <base:Property id="Xckv4ZfxS4Q3SRKnqeEjlG" name="BINDINGSTATUS" value="Internal"/>
+        </base:PropertyBag>
+      </uxc:DataField>
+       <uxc:DataField id="DuNmFFDJ4aQS6v9pRdD2kW" name="Saved" type="boolean">
+         <base:PropertyBag id="8I8UvzBGcKofGUz8ba1sW0">
+          <base:Property id="G4JgkmfazqgqjEWLyEY1m0" name="BINDINGSTATUS" value="Internal"/>
+        </base:PropertyBag>
+      </uxc:DataField>
+       <uxc:DataField id="60SkWh62QK_w7ZKrtN8eAW" name="IsPersistent" type="boolean">
+         <base:PropertyBag id="wp8JGWYRVqkTvfPSQ1tWQm">
+          <base:Property id="LRM32HQ29qwhjrWwbHXYPm" name="BINDINGSTATUS" value="Internal"/>
+        </base:PropertyBag>
+      </uxc:DataField>
+    </uxc:Structure>
+    <uxc:Structure id="XMnPKMWoU42Rqef2cWYG_W" name="UIState"/>
+  </uxc:DataModel>
+  <uxc:ModelChanges/>
+</uxc:Implementation>
+<uxc:Navigation id="7TkPJslpGaYvma0q3aaRjm"/>
+ <uxc:CenterStructure id="oog$yb7EFaYKcjHrdbLyE0" accessContext="NONE">
+   <uxc:Title id="qviXGM_jCa6U_qZYEqrFuG" textPoolId="AIvsodT2fKMu1doEsB_zFm">
+     <base:PropertyBag id="dcnvcwTMwKIgvwuGP$ABHm">
+      <base:Property id="KILPURXUXqMfV$nth8IkWW" name="Name" value=""/>
+    </base:PropertyBag>
+  </uxc:Title>
+   
+   <uxc:ExternalUIApplications id="3jyfClHZHaEGLnT7BMVyTG">
+
+    <uxc:ExternalUIApplication id="00163E7D2D221EDABAEB94761F7605F2" reference="YNNN29NPY_MAOV9EAA26932C4DFFF7"/><uxc:ExternalUIApplication id="00163EB9D6A21EEBACB1CEB0F1A5DA38" reference="YNNN29NPY_QUOV51DBF90B88CA1A46"/><uxc:ExternalUIApplication id="00163EA8995E1EEBB2C0F23223E08F38" reference="YNNN29NPY_MAOVB55C9CD4D15EF392"/></uxc:ExternalUIApplications>
+</uxc:CenterStructure>
+ <UXView id="WXG1Zag7r42JN4qlnZ4CNG" patternType="page">
+   <uxv:IdentificationRegion id="gYkSv6Scg4wR8dhpAK8QeW">
+    <uxv:Title id="jFoWhPtfI4E4N7tvM7jCH0" textPoolId="PiMstgUvh4EfZe9eYnpqFm"/>
+    <uxv:WindowTitle id="Qg2kjQLsKq2w8iei9Hi$NW" textPoolId="w1imvYWITKg_$efZrDlOw0"/>
+  </uxv:IdentificationRegion>
+   <uxv:ViewContainerRegion id="F7o9d6nOaKka4brYURmyLG">
+    <uxv:View id="4Tx9voX$TKsLQ5YifLFvdm" columns="2" rows="2"/>
+  </uxv:ViewContainerRegion>
+  <uxv:ActionForms/>
+  <uxv:ModalDialogs id="czuJOlhTZaYYIWEnoiBl$W"/>
+  <uxv:SideCarViewPanels id="jx8zR$TF0a_DRYOvG4oj9m"/>
+</UXView>
+ <TextPool>
+   <base:TextBlock language="EN" masterLanguage="true" currentLanguage="true">
+     <base:TextPoolEntry id="xnK9xRxXkqAWQFPtllakWG" textUuid="PiMstgUvh4EfZe9eYnpqFm" text="AccWoV.WCVIEW.uiwocview View" textCategory="XTIT"/>
+       <base:TextPoolEntry id="ZD59gMOcr4obJrkRf_S_Fm" textUuid="AIvsodT2fKMu1doEsB_zFm" text="WorkCenterItem" textCategory="XTIT"/>
+       <base:TextPoolEntry id="5fPIC82xfqwdknE3nK1jW0" textUuid="w1imvYWITKg_$efZrDlOw0" text="Workcenter View" textCategory="XTIT"/>
+       <base:TextPoolEntry id="Nez6rscZ2KUjb0vHbCH9yG" textUuid="pTNxjRVE6q6bvi4lSskCgm" text="AccWoV.WCVIEW.uiwocview" textCategory="YINF"/>
+    </base:TextBlock>
+</TextPool>
+</UXComponent>

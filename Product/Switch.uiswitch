@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UISwitch xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="YNNN29NPY_Switch" nameTextPoolId="YNNN29NPY_SWITCHA78E0A03B980459D" descriptionTextPoolId="YNNN29NPY_SWIIONB4ED9CBCAEC21539" xmlns="http://www.sap.com/a1s/cd/oberon/uimodelchange-1.0">
+ <TextPool xmlns="">
+  <TextBlock language="EN" masterLanguage="true" xmlns="http://www.sap.com/a1s/cd/oberon/base-1.0">
+   <TextPoolEntry id="YNNN29NPY_SwitchNAME" textUuid="YNNN29NPY_SWITCHA78E0A03B980459D" text="Switch" textCategory="XTXT"/>
+   <TextPoolEntry id="YNNN29NPY_SwitchDESCRIPTION" textUuid="YNNN29NPY_SWIIONB4ED9CBCAEC21539" text="UI Switch" textCategory="YTXT"/>
+  </TextBlock>
+ </TextPool>
+</UISwitch>

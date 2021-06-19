@@ -1,0 +1,55 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: ProdHierarchy
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+import CommunicationServicesManagement.Global;
+import AP.FO.ProductDataMaintenance.Global;
+
+
+//*****Query Product********//
+var query = Material.QueryByDescription;
+var selectionParams = query.CreateSelectionParams();
+selectionParams.Add(query.ZSKUExtID_B7AD952QPQ6NZ0DX95SWUJ8PG.content, "I", "EQ", this.ParentExtID.content);
+// Result
+var resultData = query.ExecuteDataOnly(selectionParams);
+
+
+if (resultData.Count() > 0)
+{
+   
+	this.materialID = resultData.GetFirst().InternalID.RemoveLeadingZeros();
+   
+ 
+}
+
+//Retrieve selected product
+if (!this.materialID.IsInitial())
+{
+	var prod = Material.Retrieve(this.materialID);
+
+	if (prod.IsSet())
+	{
+		this.ToMaterial = prod;
+
+	}
+}
+
+//var query = ObjectIdentifierMapping.QueryByElements;
+////var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.RemoteObjectID.content, "I", "EQ", this.ParentExternalID.content);
+//// Result
+//var resultData = query.ExecuteDataOnly(selectionParams);

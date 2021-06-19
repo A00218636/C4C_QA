@@ -1,0 +1,42 @@
+﻿/*
+	Add your SAP Business ByDesign scripting language implementation for:
+		Business Object: Material
+		Node: Root
+		Event: BeforeSave 
+		
+	Note: 
+	  - To access the elements of the business object node, 
+	    use path expressions, for example, this.<element name>. 
+	  - To use code completion, press CTRL+J. 
+	  - The solution uses this script when:
+		- the instance of the business object is being saved.
+		- the instance of the business object is created from other sources like web services, preview screen, and so on.
+*/
+
+import ABSL;
+
+//QUERY PRODHIERARCHY BO ITEM NODE WITH PARAM ACCESSORY INTERNAL ID AND UPDATE THE SIZE DESCRIPTION FIELD
+//var query = ProdHierarchy.item.QueryByElements;
+////var resultData = query.ExecuteDataOnly();
+//// 2. Selection
+//var selectionParams = query.CreateSelectionParams();
+//selectionParams.Add(query.accessoryProdID.content, "I", "EQ", this.InternalID.content);
+//// Result
+//var resultData = query.ExecuteDataOnly(selectionParams);
+//
+//if (resultData.Count() > 0)
+//{
+	//foreach (var i in resultData)
+	//{
+		//var linkID = i.LinkID;
+		//var accessory = ProdHierarchy.item.Retrieve(linkID);
+//
+		//if (accessory.IsSet())
+		//{
+			//accessory.SizeDescription = this.Common.ZSizeDescription; 
+		//}
+	//}
+//}
+ 
+ 
+ 

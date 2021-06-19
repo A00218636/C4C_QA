@@ -1,0 +1,56 @@
+﻿import AP.Common.GDT;
+import AP.FO.ProductDataMaintenance.Global;
+
+[Extension] businessobject AP.FO.ProductDataMaintenance.Global:Material {
+ 
+        // You must activate this business object before you can access the extension fields
+        // or messages in script files, forms, and screens.
+
+		
+   		node SupplierInformation {
+   	    } 
+    
+   		node SalesProcessInformation {
+   	    } 
+    
+   		node Common {
+		    element ZExtField:ProductID;
+		    [Scenario(Material,ProductToLead)][Label("External SKU ID")]element ZSKUExtID:NOCONVERSION_ObjectID;
+			[Label("Base Price")]element ZBase:Amount;
+			[Label("AE Low")]element ZAELow:Amount;
+			[Label("High Market")]element ZHighMkt:Amount;
+			[Label("Stretch")]element ZStretch:Amount;
+			[Label("RVP/SVP Low")]element ZRVPSVPLow:Amount;
+			[Label("Bonus Buck Price")]element ZBonusBuckPrice:Amount;
+			[Label("Promo Price")]element ZPromoPrice:Amount;
+			[Label("Base Price(CA)")]element ZBaseCA:Amount;
+			[Label("AE Low(CA)")]element ZAELowCA:Amount;
+			[Label("High Market(CA)")]element ZHighMktCA:Amount;
+			[Label("Stretch(CA)")]element ZStretchCA:Amount;
+			[Label("RVP/SVP Low(CA)")]element ZRVPSVPLowCA:Amount;
+			[Label("Bonus Buck Price(CA)")]element ZBonusBuckPriceCA:Amount;
+			[Label("Promo Price(CA)")]element ZPromoPriceCA:Amount;
+			
+
+
+
+		   
+   	    } 
+    
+   		node QuantityConversion {
+   	    } 
+    
+   		node CompetitorInformation {
+   	    } 
+    
+   		node CustomerInformation {
+   	    } 
+    
+   		node OwnProduct {
+   	    } 
+    
+   		node MeasurementPointTemplate {
+   	    } 
+     
+  
+}

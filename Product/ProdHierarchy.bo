@@ -1,0 +1,38 @@
+﻿import AP.Common.GDT as apCommonGDT;
+import AP.FO.ProductDataMaintenance.Global;
+
+businessobject ProdHierarchy raises Error{
+
+        // Root node must not be specified, it is created implicitly
+        //
+        // Add elements here. 
+        // 
+        // To declare an element as alternative key, use the [AlternativeKey] annotation.
+        // Please note:
+        // - An alternative key of type UUID exists implicitly for each node, enabling the node
+        //   to be used as an association target.
+        // - The QueryByElements query is created automatically for each node.
+        // - Code completion is available with CTRL + SPACE.
+
+		message Error text "Please enter &1":LANGUAGEINDEPENDENT_EXTENDED_Text;
+				 element prodHeirarchyID:ID; 
+				 [AlternativeKey]element ParentExtID:NOCONVERSION_ObjectID;
+
+
+		node item[0,n] raises Error{
+		                  
+		                 [Label("Obsolete")]element accessoryLineID:ID;  
+						 [AlternativeKey] element LinkID:ID; 
+						 element isActive:Indicator;
+						 element parentItemID:ProductInternalID; 
+						 element ParentItemExternalID:NOCONVERSION_ObjectID;
+						 element accessoryProdID:ProductInternalID; 
+						 element AccessoryExternalID: NOCONVERSION_ObjectID; 
+						 element SizeDescription:LANGUAGEINDEPENDENT_EXTENDED_Text;      
+						 association ToMaterial [1,1] to Material;
+        }
+		element materialID:ProductInternalID;
+		element ParentExternalID:NOCONVERSION_ObjectID;
+		
+		association ToMaterial [1,1] to Material;
+}
